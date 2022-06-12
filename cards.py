@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from enum import Enum, auto, unique
 
 
@@ -37,3 +38,14 @@ class Rank(Enum):
 
     def __str__(self) -> str:
         return str(self.value)
+
+@dataclass
+class Card:
+    rank: Rank
+    suit: Suit
+
+    def __str__(self) -> str:
+        return f"{self.rank}{self.suit}"
+
+
+print(Card(Rank.TWO, Suit.DIAMOND))
