@@ -1,12 +1,12 @@
-# card: suit, deck, rank
-from enum import Enum
+from enum import Enum, auto, unique
 
 
+@unique
 class Suit(Enum):
-    SPADE = 1
-    HEART = 2
-    CLUB = 3
-    DIAMOND = 4
+    SPADE = auto()
+    HEART = auto()
+    CLUB = auto()
+    DIAMOND = auto()
 
     def __str__(self) -> str:
         if self == Suit.SPADE:
@@ -17,3 +17,23 @@ class Suit(Enum):
             return "♥"
         if self == Suit.CLUB:
             return "♣"
+
+
+@unique
+class Rank(Enum):
+    ACE = "A"
+    TWO = 2
+    THREE = 3
+    FOUR = 4
+    FIVE = 5
+    SIX = 6
+    SEVEN = 7
+    EIGHT = 8
+    NINE = 9
+    TEN = 10
+    JACK = "J"
+    QUEEN = "Q"
+    KING = "K"
+
+    def __str__(self) -> str:
+        return str(self.value)
