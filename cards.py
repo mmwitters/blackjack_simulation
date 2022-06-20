@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from enum import Enum, auto, unique
 from typing import List
 from itertools import product
+from random import shuffle
 
 
 @unique
@@ -41,7 +42,8 @@ class Rank(Enum):
     def __str__(self) -> str:
         return str(self.value)
 
-@dataclass
+
+@dataclass(frozen=True)
 class Card:
     rank: Rank
     suit: Suit
@@ -49,13 +51,19 @@ class Card:
     def __str__(self) -> str:
         return f"{self.rank}{self.suit}"
 
-@dataclass
+
+@dataclass(frozen=True)
 class Deck:
     cards: List[Card]
 
     @staticmethod
     def standard_deck():
-        cards = [Card(*tup) for tup in product(Rank, Suit)]
-        return Deck(cards)
+        return Deck([Card(*tup) for tup in product(Rank, Suit)])
 
+    def shuffle(self):
+        copy = self.cards.copy()
+        shuffle(copy)
+        return Deck(copy)
 
+    def __len__(self):
+        return len(self.cards)
