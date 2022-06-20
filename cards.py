@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum, auto, unique
+from typing import List
+from itertools import product
 
 
 @unique
@@ -47,5 +49,13 @@ class Card:
     def __str__(self) -> str:
         return f"{self.rank}{self.suit}"
 
+@dataclass
+class Deck:
+    cards: List[Card]
 
-print(Card(Rank.TWO, Suit.DIAMOND))
+    @staticmethod
+    def standard_deck():
+        cards = [Card(*tup) for tup in product(Rank, Suit)]
+        return Deck(cards)
+
+
