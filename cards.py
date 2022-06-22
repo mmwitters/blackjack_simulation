@@ -67,3 +67,9 @@ class Deck:
 
     def __len__(self):
         return len(self.cards)
+
+    def draw_card(self):
+        if len(self) == 0:
+            return None, Deck([])
+        return self.cards[0], Deck(self.cards[1:])
+
