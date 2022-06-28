@@ -1,5 +1,7 @@
 from dataclasses import dataclass
+from enum import unique, Enum, auto
 from itertools import product
+
 from cards import Deck, Card, Rank
 
 
@@ -14,10 +16,12 @@ def card_value(card: Card) -> list[int]:
     else:
         return [card.rank.value]
 
+
 # TODO do we want to make the card order agnostic?
 @dataclass(frozen=True)
 class Hand:
     cards: list[Card]
+
     def card_totals(self) -> set[int]:
         return set(map(sum, product(*list(map(card_value, self.cards)))))
 
@@ -32,23 +36,31 @@ class Hand:
         return Hand(new_hand)
 
 
+class Player:
+    name: str
+
+
 class BettingBox:
     hand: Hand
+    player: Player
     pass
     # limited to 5-9 betting boxes total
     # player cannot play more than 3 boxes (US rules)
 
+
 class Dealer:
     hand: Hand
-    deck: Deck #added -- will need to accomodate multiple decks (1-8 decks total)
+    shoe: Deck  # added -- will need to accomodate multiple decks (1-8 decks total)
 
-class Player:
-    betting_box: BettingBox
-    # I think this makes more sense than a Hand, but I'm unsure which a player is assigned to first
 
 @dataclass(frozen=True)
 class Table:
     betting_boxes: list[BettingBox]
     dealer: Dealer
 
-# Player Action
+
+@unique
+class PlayerAction(Enum):
+    Hit = auto()
+    Stand = auto()
+# TODO add in remaining 3 actions: double down, split, and surrender
