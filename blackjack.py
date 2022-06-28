@@ -31,9 +31,24 @@ class Hand:
         new_hand = self.cards.copy() + [card]
         return Hand(new_hand)
 
-# Table
 
-# Betting Box(es)
+class BettingBox:
+    hand: Hand
+    pass
+    # limited to 5-9 betting boxes total
+    # player cannot play more than 3 boxes (US rules)
+
+class Dealer:
+    hand: Hand
+    deck: Deck #added -- will need to accomodate multiple decks (1-8 decks total)
+
+class Player:
+    betting_box: BettingBox
+    # I think this makes more sense than a Hand, but I'm unsure which a player is assigned to first
+
+@dataclass(frozen=True)
+class Table:
+    betting_boxes: list[BettingBox]
+    dealer: Dealer
 
 # Player Action
-
