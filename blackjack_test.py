@@ -1,7 +1,7 @@
 import unittest
 
 from cards import Deck, Suit, Rank, Card
-from blackjack import Hand
+from blackjack import Hand, Table, Dealer, step, BettingBox, Player
 
 
 class BlackjackTests(unittest.TestCase):
@@ -28,6 +28,17 @@ class BlackjackTests(unittest.TestCase):
     def test_hit(self):
         self.assertEqual(Hand([]).hit(Card(Rank.KING, Suit.HEART)), Hand([Card(Rank.KING, Suit.HEART)]))
         self.assertEqual(Hand([Card(Rank.KING, Suit.HEART)]).hit(Card(Rank.KING, Suit.SPADE)), Hand([Card(Rank.KING, Suit.HEART), Card(Rank.KING, Suit.SPADE)]))
+
+    def test_empty_table_step_does_nothing(self):
+        table = Table([], Dealer.emptyDealer(Deck.standard_deck()))
+        self.assertEqual(table, step(table))
+
+    def test_single_player_empty_table(self):
+        box = BettingBox(Hand.emptyHand(), Player("Maddie"), 5)
+        table = Table([box], Dealer.emptyDealer(Deck.standard_deck()))
+        new_table = step(table)
+        print(table)
+        print(new_table)
 
 if __name__ == '__main__':
     unittest.main()

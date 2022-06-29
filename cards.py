@@ -51,6 +51,9 @@ class Card:
     def __str__(self) -> str:
         return f"{self.rank}{self.suit}"
 
+    def __repr__(self) -> str:
+        return f"{self.rank}{self.suit}"
+
 
 @dataclass(frozen=True)
 class Deck:
@@ -73,3 +76,6 @@ class Deck:
             return None, Deck([])
         return self.cards[0], Deck(self.cards[1:])
 
+    def __repr__(self) -> str:
+        cards = "".join(map(repr, self.cards))
+        return f"({cards})"
