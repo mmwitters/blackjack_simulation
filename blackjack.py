@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from enum import unique, Enum, auto
 from itertools import product
+from typing import NamedTuple
 
 from cards import Deck, Card, Rank
 
@@ -31,7 +32,7 @@ class Hand:
                 return False
         return True
 
-    def hit(self, card: Card):
+    def add_card(self, card: Card):
         new_hand = self.cards.copy() + [card]
         return Hand(new_hand)
 
@@ -49,20 +50,16 @@ class Player:
     name: str
 
 
-@dataclass(frozen=True)
-class BettingBox:
+class BettingBox(NamedTuple):
     hand: Hand
     player: Player
     bet: int
 
     # limited to 5-9 betting boxes total
     # player cannot play more than 3 boxes (US rules)
-    def with_hand(self, hand):
-        return BettingBox(hand, self.player, self.bet)
 
 
-@dataclass(frozen=True)
-class Dealer:
+class Dealer(NamedTuple):
     hand: Hand
     shoe: Deck  # added -- will need to accomodate multiple decks (1-8 decks total)
 
@@ -71,10 +68,15 @@ class Dealer:
         return Dealer(Hand.emptyHand(), deck)
 
 
-@dataclass(frozen=True)
-class Table:
+class Table(NamedTuple):
     betting_boxes: list[BettingBox]
     dealer: Dealer
+    player_turn: int
+
+    def replace_betting_box(self, position: int, betting_box: BettingBox):
+        betting_boxes = self.betting_boxes.copy()
+        betting_boxes[position] = betting_box
+        return self._replace(betting_boxes=betting_boxes)
 
 
 @unique
@@ -96,9 +98,33 @@ def initial_draw(table: Table) -> Table:
 
     for betting_box in table.betting_boxes:
         hand = betting_box.hand
-        for i in range(2):
-            card, deck = deck.draw_card()
-            hand = hand.hit(card)
-        betting_boxes.append(betting_box.with_hand(hand))
+        card, deck = deck.draw_card()
+        hand = hand.add_card(card)
+        betting_boxes.append(betting_box._replace(hand=hand))
+    card, deck = deck.draw_card()
+    dealer_hand = table.dealer.hand.add_card(card)
+    for i, betting_box in enumerate(betting_boxes):
+        hand = betting_box.hand
+        card, deck = deck.draw_card()
+        hand = hand.add_card(card)
+        betting_boxes[i] = betting_box._replace(hand=hand)
 
-    return Table(betting_boxes, Dealer(table.dealer.hand, deck))
+    return table._replace(dealer=Dealer(dealer_hand, deck), betting_boxes=betting_boxes)
+
+
+def hit(table: Table) -> Table:
+    current_betting_box = table.betting_boxes[table.player_turn]
+    if current_betting_box.hand.is_busted():
+        print(table)
+        raise Exception("Can't Hit Busted Hand")
+
+    card, deck = table.dealer.shoe.draw_card()
+    hand = current_betting_box.hand.add_card(card)
+    player_turn = table.player_turn
+
+    if hand.is_busted():
+        player_turn += 1
+
+    return table.replace_betting_box(table.player_turn,
+                                     current_betting_box._replace(hand=hand))\
+        ._replace(player_turn=player_turn, dealer=table.dealer._replace(shoe=deck))
