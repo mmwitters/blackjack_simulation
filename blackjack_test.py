@@ -1,7 +1,7 @@
 import unittest
 
 from cards import Deck, Suit, Rank, Card
-from blackjack import Hand, Table, Dealer, initial_draw, BettingBox, Player, hit
+from blackjack import Hand, Table, Dealer, initial_draw, BettingBox, Player, hit, stand
 
 
 class BlackjackTests(unittest.TestCase):
@@ -38,18 +38,61 @@ class BlackjackTests(unittest.TestCase):
         box = BettingBox(Hand.emptyHand(), Player("Maddie"), 5)
         table = Table([box], Dealer.emptyDealer(
             Deck([Card(Rank.ACE, Suit.HEART), Card(Rank.TWO, Suit.HEART), Card(Rank.THREE, Suit.HEART)])), 0)
-        expected_table = Table([BettingBox(Hand([Card(Rank.ACE, Suit.HEART), Card(Rank.THREE, Suit.HEART)]), Player("Maddie"), 5)], Dealer(Hand([Card(Rank.TWO, Suit.HEART)]), Deck([])), 0)
+        expected_table = Table(
+            [BettingBox(Hand([Card(Rank.ACE, Suit.HEART), Card(Rank.THREE, Suit.HEART)]), Player("Maddie"), 5)],
+            Dealer(Hand([Card(Rank.TWO, Suit.HEART)]), Deck([])), 0)
         self.assertEqual(expected_table, initial_draw(table))
 
     def test_hit(self):
-        table = Table([BettingBox(Hand([Card(Rank.ACE, Suit.HEART), Card(Rank.THREE, Suit.HEART)]), Player("Maddie"), 5)], Dealer(Hand([Card(Rank.TWO, Suit.HEART)]), Deck([Card(Rank.TWO, Suit.CLUB)])), 0)
-        expected_table = Table([BettingBox(Hand([Card(Rank.ACE, Suit.HEART), Card(Rank.THREE, Suit.HEART), Card(Rank.TWO, Suit.CLUB)]), Player("Maddie"), 5)], Dealer(Hand([Card(Rank.TWO, Suit.HEART)]), Deck([])), 0)
+        table = Table([BettingBox(Hand([Card(Rank.ACE, Suit.HEART),
+                                        Card(Rank.THREE, Suit.HEART)]),
+                                  Player("Maddie"),
+                                  5)],
+                      Dealer(Hand([Card(Rank.TWO, Suit.HEART)]),
+                             Deck([Card(Rank.TWO, Suit.CLUB)])),
+                      0)
+        expected_table = Table([BettingBox(Hand([Card(Rank.ACE, Suit.HEART),
+                                                 Card(Rank.THREE, Suit.HEART),
+                                                 Card(Rank.TWO, Suit.CLUB)]),
+                                           Player("Maddie"), 5)],
+                               Dealer(Hand([Card(Rank.TWO,
+                                                 Suit.HEART)]),
+                                      Deck([])),
+                               0)
         self.assertEqual(expected_table, hit(table))
 
     def test_hit_busts(self):
-        table = Table([BettingBox(Hand([Card(Rank.TEN, Suit.SPADE), Card(Rank.TEN, Suit.HEART)]), Player("Maddie"), 5)], Dealer(Hand([Card(Rank.TWO, Suit.HEART)]), Deck([Card(Rank.TWO, Suit.CLUB)])), 0)
-        expected_table = Table([BettingBox(Hand([Card(Rank.TEN, Suit.SPADE), Card(Rank.TEN, Suit.HEART), Card(Rank.TWO, Suit.CLUB)]), Player("Maddie"), 5)], Dealer(Hand([Card(Rank.TWO, Suit.HEART)]), Deck([])), 1)
+        table = Table([BettingBox(Hand([Card(Rank.TEN, Suit.SPADE),
+                                        Card(Rank.TEN, Suit.HEART)]),
+                                  Player("Maddie"), 5)],
+                      Dealer(Hand([Card(Rank.TWO, Suit.HEART)]),
+                             Deck([Card(Rank.TWO, Suit.CLUB)])),
+                      0)
+        expected_table = Table([BettingBox(Hand([Card(Rank.TEN, Suit.SPADE),
+                                                 Card(Rank.TEN, Suit.HEART),
+                                                 Card(Rank.TWO, Suit.CLUB)]),
+                                           Player("Maddie"),
+                                           5)],
+                               Dealer(Hand([Card(Rank.TWO, Suit.HEART)]),
+                                      Deck([])),
+                               1)
         self.assertEqual(expected_table, hit(table))
+
+    def test_stand(self):
+        table = Table([BettingBox(Hand([Card(Rank.TEN, Suit.SPADE),
+                                        Card(Rank.TEN, Suit.HEART)]),
+                                  Player("Maddie"), 5)],
+                      Dealer(Hand([Card(Rank.TWO, Suit.HEART)]),
+                             Deck([Card(Rank.TWO, Suit.CLUB)])),
+                      0)
+        expected_table = Table([BettingBox(Hand([Card(Rank.TEN, Suit.SPADE),
+                                                 Card(Rank.TEN, Suit.HEART)]),
+                                           Player("Maddie"),
+                                           5)],
+                               Dealer(Hand([Card(Rank.TWO, Suit.HEART)]),
+                                      Deck([Card(Rank.TWO, Suit.CLUB)])),
+                               1)
+        self.assertEqual(expected_table, stand(table))
 
 
 if __name__ == '__main__':

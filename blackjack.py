@@ -78,6 +78,9 @@ class Table(NamedTuple):
         betting_boxes[position] = betting_box
         return self._replace(betting_boxes=betting_boxes)
 
+    def advance_player(self):
+        return self._replace(player_turn=self.player_turn + 1)
+
 
 @unique
 class PlayerAction(Enum):
@@ -120,11 +123,17 @@ def hit(table: Table) -> Table:
 
     card, deck = table.dealer.shoe.draw_card()
     hand = current_betting_box.hand.add_card(card)
-    player_turn = table.player_turn
-
+    table = table.replace_betting_box(table.player_turn, current_betting_box._replace(hand=hand))
     if hand.is_busted():
-        player_turn += 1
+        table = table.advance_player()
 
-    return table.replace_betting_box(table.player_turn,
-                                     current_betting_box._replace(hand=hand))\
-        ._replace(player_turn=player_turn, dealer=table.dealer._replace(shoe=deck))
+    return table._replace(dealer=table.dealer._replace(shoe=deck))
+
+
+def stand(table: Table) -> Table:
+    current_betting_box = table.betting_boxes[table.player_turn]
+    if current_betting_box.hand.is_busted():
+        print(table)
+        raise Exception("Can't Stand Busted Hand")
+
+    return table.advance_player()
