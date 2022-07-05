@@ -138,15 +138,12 @@ def stand(table: Table) -> Table:
 
     return table.advance_player()
 
+
 def dealer_moves(table: Table) -> Table:
     deck = table.dealer.shoe
     card, deck = deck.draw_card()
-    dealer_hand = table.dealer.hand.add_card(card) #dealer draws 2nd card
-    if any(dealer_hand.card_totals()) >= 17:
-        return table._replace(dealer=table.dealer._replace(hand=dealer_hand, shoe=deck))
-    while not any(dealer_hand.card_totals()) >= 17: #keep drawing cards until point totals exceeds 17
-        card, deck = deck.draw_card() #are there mutability issues here?
-        dealer_hand = table.dealer.hand.add_card(card)
+    dealer_hand = table.dealer.hand.add_card(card)
+    while max(dealer_hand.card_totals()) < 17:
+        card, deck = deck.draw_card()
+        dealer_hand = dealer_hand.add_card(card)
     return table._replace(dealer=table.dealer._replace(hand=dealer_hand, shoe=deck))
-
-
