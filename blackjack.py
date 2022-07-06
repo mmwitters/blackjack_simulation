@@ -18,7 +18,7 @@ def card_value(card: Card) -> list[int]:
         return [card.rank.value]
 
 
-# TODO do we want to make the card order agnostic?
+# TODO do I want to make the card order agnostic?
 @dataclass(frozen=True)
 class Hand:
     cards: list[Card]
@@ -35,6 +35,10 @@ class Hand:
     def add_card(self, card: Card):
         new_hand = self.cards.copy() + [card]
         return Hand(new_hand)
+
+    # TODO
+    def is_blackjack(self):
+        pass
 
     @classmethod
     def emptyHand(cls):
@@ -92,6 +96,7 @@ class PlayerAction(Enum):
 @unique
 class HandResult(Enum):
     Win = auto()
+    Tie = auto()
     Loss = auto()
 
 
@@ -154,8 +159,26 @@ def dealer_moves(table: Table) -> Table:
     return table._replace(dealer=table.dealer._replace(hand=dealer_hand, shoe=deck))
 
 
-def payout(table: Table) -> dict[Player, tuple[HandResult, int]]:
-    results = {}
+def individual_payout(betting_box: BettingBox, result: HandResult) -> int:
+    if result == HandResult.Win:
+        return betting_box.bet
+    return -1 * betting_box.bet
+
+# TODO deal with blackjacks and Tie cases
+def hand_result(betting_box: BettingBox, dealer: Dealer) -> HandResult:
+    filtered = filter(lambda x: x <= 21, betting_box.hand.card_totals())
+    dealer_filtered = filter(lambda x: x <= 21, dealer.hand.card_totals())
+    if max(filtered) > max(dealer_filtered):
+        result = HandResult.Win
+    else:
+        result = HandResult.Loss
+    return result
+
+
+def table_payout(table: Table) -> dict[Player, tuple[HandResult, int]]:
+    results: dict[Player, tuple[HandResult, int]] = {}
     for betting_box in table.betting_boxes:
-        results[betting_box.player] = (HandResult.Win, betting_box.bet)
+        result = hand_result(betting_box, table.dealer)
+        payout = individual_payout(betting_box, result)
+        results[betting_box.player] = result, payout
     return results
