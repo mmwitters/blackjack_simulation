@@ -82,13 +82,18 @@ class Table(NamedTuple):
         return self._replace(player_turn=self.player_turn + 1)
 
 
+# TODO add in remaining 3 actions: double down, split, and surrender
 @unique
 class PlayerAction(Enum):
     Hit = auto()
     Stand = auto()
 
 
-# TODO add in remaining 3 actions: double down, split, and surrender
+@unique
+class HandResult(Enum):
+    Win = auto()
+    Loss = auto()
+
 
 def shoe(deck: Deck, num_of_decks: int) -> Deck:
     return Deck([card for card in deck.cards for _ in range(num_of_decks)])
@@ -147,3 +152,10 @@ def dealer_moves(table: Table) -> Table:
         card, deck = deck.draw_card()
         dealer_hand = dealer_hand.add_card(card)
     return table._replace(dealer=table.dealer._replace(hand=dealer_hand, shoe=deck))
+
+
+def payout(table: Table) -> dict[Player, tuple[HandResult, int]]:
+    results = {}
+    for betting_box in table.betting_boxes:
+        results[betting_box.player] = (HandResult.Win, betting_box.bet)
+    return results

@@ -1,7 +1,8 @@
 import unittest
 
 from cards import Deck, Suit, Rank, Card
-from blackjack import Hand, Table, Dealer, initial_draw, BettingBox, Player, hit, stand, dealer_moves
+from blackjack import Hand, Table, Dealer, initial_draw, BettingBox, Player, hit, stand, dealer_moves, HandResult, \
+    payout
 
 
 class BlackjackTests(unittest.TestCase):
@@ -131,6 +132,17 @@ class BlackjackTests(unittest.TestCase):
                                       Deck([Card(Rank.EIGHT, Suit.DIAMOND)])),
                                1)
         self.assertEqual(expected_table, dealer_moves(table))
+
+    def test_payout(self):
+        dealer = Dealer(Hand([Card(Rank.NINE, Suit.HEART), Card(Rank.SEVEN, Suit.CLUB), Card(Rank.ACE, Suit.CLUB)]),
+                        Deck([Card(Rank.EIGHT, Suit.DIAMOND)]))
+        betting_boxes = [BettingBox(Hand([Card(Rank.TEN, Suit.SPADE),
+                                          Card(Rank.TEN, Suit.HEART)]),
+                                    Player("Maddie"),
+                                    5)]
+        table = Table(betting_boxes, dealer, 1)
+        results = {Player("Maddie"): (HandResult.Win, 5)}
+        self.assertEqual(results, payout(table))
 
 
 if __name__ == '__main__':
