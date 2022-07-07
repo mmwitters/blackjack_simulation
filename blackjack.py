@@ -88,7 +88,6 @@ class Table(NamedTuple):
 
 
 # TODO add in remaining 3 actions: double down, split, and surrender
-# TODO ensure this is properly set up -- am I using this anywhere? Right now they're just methods?
 @unique
 class PlayerAction(Enum):
     Hit = auto()
@@ -175,7 +174,6 @@ def individual_payout(betting_box: BettingBox, result: HandResult) -> int:
     return 0
 
 
-# TODO research and then add in tie case to function below
 def hand_result(betting_box: BettingBox, dealer: Dealer) -> HandResult:
     if betting_box.hand.is_blackjack() and dealer.hand.is_blackjack():
         return HandResult.Tie
@@ -184,12 +182,14 @@ def hand_result(betting_box: BettingBox, dealer: Dealer) -> HandResult:
     elif dealer.hand.is_blackjack():
         return HandResult.Loss
     else:
-        filtered = filter(lambda x: x <= 21, betting_box.hand.card_totals())
-        dealer_filtered = filter(lambda x: x <= 21, dealer.hand.card_totals())
+        filtered = list(filter(lambda x: x <= 21, betting_box.hand.card_totals()))
+        dealer_filtered = list(filter(lambda x: x <= 21, dealer.hand.card_totals()))
         if max(filtered) > max(dealer_filtered):
             return HandResult.Win
-        else:
+        elif max(filtered) < max(dealer_filtered):
             return HandResult.Loss
+        else:
+            return HandResult.Tie
 
 
 def table_payout(table: Table) -> dict[Player, tuple[HandResult, int]]:

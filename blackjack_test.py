@@ -167,7 +167,7 @@ class BlackjackTests(unittest.TestCase):
         results = {Player("Maddie"): (HandResult.Loss, 0)}
         self.assertEqual(results, table_payout(table))
 
-    def test_table_payout_tie(self):
+    def test_table_payout_blackjack_tie(self):
         dealer = Dealer(Hand([Card(Rank.TEN, Suit.SPADE),
                               Card(Rank.ACE, Suit.HEART)]), Deck([Card(Rank.EIGHT, Suit.DIAMOND)]))
         betting_boxes = [BettingBox(Hand([Card(Rank.TEN, Suit.HEART),
@@ -177,6 +177,18 @@ class BlackjackTests(unittest.TestCase):
         table = Table(betting_boxes, dealer, 1)
         results = {Player("Maddie"): (HandResult.Tie, 5)}
         self.assertEqual(results, table_payout(table))
+
+    def test_table_payout_tie(self):
+        dealer = Dealer(Hand([Card(Rank.TEN, Suit.SPADE),
+                              Card(Rank.EIGHT, Suit.HEART)]), Deck([Card(Rank.EIGHT, Suit.DIAMOND)]))
+        betting_boxes = [BettingBox(Hand([Card(Rank.TEN, Suit.HEART),
+                                          Card(Rank.EIGHT, Suit.CLUB)]),
+                                    Player("Maddie"),
+                                    5)]
+        table = Table(betting_boxes, dealer, 1)
+        results = {Player("Maddie"): (HandResult.Tie, 5)}
+        self.assertEqual(results, table_payout(table))
+
 
 if __name__ == '__main__':
     unittest.main()
