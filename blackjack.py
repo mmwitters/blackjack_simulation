@@ -38,7 +38,7 @@ class Hand:
 
     # TODO have Alex check these rules make sense
     def is_blackjack(self):
-        if len(self.cards) == 2 and self.card_totals() == 21:
+        if len(self.cards) == 2 and 21 in self.card_totals():
             return True
         return False
 
@@ -89,6 +89,7 @@ class Table(NamedTuple):
 
 
 # TODO add in remaining 3 actions: double down, split, and surrender
+# TODO ensure this is properly set up -- am I using this anywhere? Right now they're just methods?
 @unique
 class PlayerAction(Enum):
     Hit = auto()
@@ -163,7 +164,7 @@ def dealer_moves(table: Table) -> Table:
 
 def individual_payout(betting_box: BettingBox, result: HandResult) -> int:
     if result == HandResult.Win:
-        return 2 * betting_box.bet #is this right? If you bet 5 and win, you get 10 back?
+        return betting_box.bet #should I multiply this by 2 If you bet 5 and win, you get 10 back?
     elif result == HandResult.Tie:
         return betting_box.bet #bet is returned so you make no money. Does this make sense to track as 5 or 0?
     return -1 * betting_box.bet
@@ -172,7 +173,7 @@ def individual_payout(betting_box: BettingBox, result: HandResult) -> int:
 # TODO deal with blackjacks and Tie cases -- have Alex check this code
 def hand_result(betting_box: BettingBox, dealer: Dealer) -> HandResult:
     if betting_box.hand.is_blackjack() and dealer.hand.is_blackjack():
-        result = HandResult.Tie
+        return HandResult.Tie
     elif betting_box.hand.is_blackjack():
         return HandResult.Win
     elif dealer.hand.is_blackjack():

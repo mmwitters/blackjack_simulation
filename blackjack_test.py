@@ -144,6 +144,39 @@ class BlackjackTests(unittest.TestCase):
         results = {Player("Maddie"): (HandResult.Win, 5)}
         self.assertEqual(results, table_payout(table))
 
+    def test_table_payout_blackjack_player(self):
+        dealer = Dealer(Hand([Card(Rank.NINE, Suit.HEART), Card(Rank.SEVEN, Suit.CLUB), Card(Rank.ACE, Suit.CLUB)]),
+                        Deck([Card(Rank.EIGHT, Suit.DIAMOND)]))
+        betting_boxes = [BettingBox(Hand([Card(Rank.TEN, Suit.SPADE),
+                                          Card(Rank.ACE, Suit.HEART)]),
+                                    Player("Maddie"),
+                                    5)]
+        table = Table(betting_boxes, dealer, 1)
+        results = {Player("Maddie"): (HandResult.Win, 5)}
+        self.assertEqual(results, table_payout(table))
+
+    def test_table_payout_blackjack_dealer(self):
+        dealer = Dealer(Hand([Card(Rank.TEN, Suit.SPADE),
+                              Card(Rank.ACE, Suit.HEART)]), Deck([Card(Rank.EIGHT, Suit.DIAMOND)]))
+        betting_boxes = [BettingBox(Hand([Card(Rank.NINE, Suit.HEART),
+                                          Card(Rank.SEVEN, Suit.CLUB),
+                                          Card(Rank.ACE, Suit.CLUB)]),
+                                    Player("Maddie"),
+                                    5)]
+        table = Table(betting_boxes, dealer, 1)
+        results = {Player("Maddie"): (HandResult.Loss, -5)}
+        self.assertEqual(results, table_payout(table))
+
+    def test_table_payout_tie(self):
+        dealer = Dealer(Hand([Card(Rank.TEN, Suit.SPADE),
+                              Card(Rank.ACE, Suit.HEART)]), Deck([Card(Rank.EIGHT, Suit.DIAMOND)]))
+        betting_boxes = [BettingBox(Hand([Card(Rank.TEN, Suit.HEART),
+                                          Card(Rank.ACE, Suit.CLUB)]),
+                                    Player("Maddie"),
+                                    5)]
+        table = Table(betting_boxes, dealer, 1)
+        results = {Player("Maddie"): (HandResult.Tie, 5)}
+        self.assertEqual(results, table_payout(table))
 
 if __name__ == '__main__':
     unittest.main()
