@@ -36,9 +36,11 @@ class Hand:
         new_hand = self.cards.copy() + [card]
         return Hand(new_hand)
 
-    # TODO
+    # TODO have Alex check these rules make sense
     def is_blackjack(self):
-        pass
+        if len(self.cards) == 2 and self.card_totals() == 21:
+            return True
+        return False
 
     @classmethod
     def emptyHand(cls):
@@ -65,7 +67,7 @@ class BettingBox(NamedTuple):
 
 class Dealer(NamedTuple):
     hand: Hand
-    shoe: Deck  # added -- will need to accomodate multiple decks (1-8 decks total)
+    shoe: Deck
 
     @classmethod
     def emptyDealer(cls, deck: Deck):
@@ -161,18 +163,28 @@ def dealer_moves(table: Table) -> Table:
 
 def individual_payout(betting_box: BettingBox, result: HandResult) -> int:
     if result == HandResult.Win:
-        return betting_box.bet
+        return 2 * betting_box.bet #is this right? If you bet 5 and win, you get 10 back?
+    elif result == HandResult.Tie:
+        return betting_box.bet #bet is returned so you make no money. Does this make sense to track as 5 or 0?
     return -1 * betting_box.bet
 
-# TODO deal with blackjacks and Tie cases
+
+# TODO deal with blackjacks and Tie cases -- have Alex check this code
 def hand_result(betting_box: BettingBox, dealer: Dealer) -> HandResult:
-    filtered = filter(lambda x: x <= 21, betting_box.hand.card_totals())
-    dealer_filtered = filter(lambda x: x <= 21, dealer.hand.card_totals())
-    if max(filtered) > max(dealer_filtered):
-        result = HandResult.Win
+    if betting_box.hand.is_blackjack() and dealer.hand.is_blackjack():
+        result = HandResult.Tie
+    elif betting_box.hand.is_blackjack():
+        return HandResult.Win
+    elif dealer.hand.is_blackjack():
+        return HandResult.Loss
     else:
-        result = HandResult.Loss
-    return result
+        filtered = filter(lambda x: x <= 21, betting_box.hand.card_totals())
+        dealer_filtered = filter(lambda x: x <= 21, dealer.hand.card_totals())
+        if max(filtered) > max(dealer_filtered):
+            result = HandResult.Win
+        else:
+            result = HandResult.Loss
+        return result
 
 
 def table_payout(table: Table) -> dict[Player, tuple[HandResult, int]]:
