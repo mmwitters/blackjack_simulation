@@ -36,7 +36,6 @@ class Hand:
         new_hand = self.cards.copy() + [card]
         return Hand(new_hand)
 
-    # TODO have Alex check these rules make sense
     def is_blackjack(self):
         if len(self.cards) == 2 and 21 in self.card_totals():
             return True
@@ -163,14 +162,20 @@ def dealer_moves(table: Table) -> Table:
 
 
 def individual_payout(betting_box: BettingBox, result: HandResult) -> int:
+    """
+    Calculates the payout to an individual for a single round
+    :param betting_box: individual who is playing/making a bet
+    :param result: whether individual won/tied/lost
+    :return: amount of money received after current round
+    """
     if result == HandResult.Win:
-        return betting_box.bet #should I multiply this by 2 If you bet 5 and win, you get 10 back?
+        return 2 * betting_box.bet
     elif result == HandResult.Tie:
-        return betting_box.bet #bet is returned so you make no money. Does this make sense to track as 5 or 0?
-    return -1 * betting_box.bet
+        return betting_box.bet
+    return 0
 
 
-# TODO deal with blackjacks and Tie cases -- have Alex check this code
+# TODO research and then add in tie case to function below
 def hand_result(betting_box: BettingBox, dealer: Dealer) -> HandResult:
     if betting_box.hand.is_blackjack() and dealer.hand.is_blackjack():
         return HandResult.Tie
@@ -182,10 +187,9 @@ def hand_result(betting_box: BettingBox, dealer: Dealer) -> HandResult:
         filtered = filter(lambda x: x <= 21, betting_box.hand.card_totals())
         dealer_filtered = filter(lambda x: x <= 21, dealer.hand.card_totals())
         if max(filtered) > max(dealer_filtered):
-            result = HandResult.Win
+            return HandResult.Win
         else:
-            result = HandResult.Loss
-        return result
+            return HandResult.Loss
 
 
 def table_payout(table: Table) -> dict[Player, tuple[HandResult, int]]:
