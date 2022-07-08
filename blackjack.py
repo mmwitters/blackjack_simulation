@@ -83,6 +83,9 @@ class Table(NamedTuple):
         betting_boxes[position] = betting_box
         return self._replace(betting_boxes=betting_boxes)
 
+    def current_player_betting_box(self) -> BettingBox:
+        return self.betting_boxes[self.player_turn]
+
     def advance_player(self):
         return self._replace(player_turn=self.player_turn + 1)
 
@@ -135,8 +138,6 @@ def hit(table: Table) -> Table:
     card, deck = table.dealer.shoe.draw_card()
     hand = current_betting_box.hand.add_card(card)
     table = table.replace_betting_box(table.player_turn, current_betting_box._replace(hand=hand))
-    if hand.is_busted():
-        table = table.advance_player()
 
     return table._replace(dealer=table.dealer._replace(shoe=deck))
 
@@ -147,7 +148,7 @@ def stand(table: Table) -> Table:
         print(table)
         raise Exception("Can't Stand Busted Hand")
 
-    return table.advance_player()
+    return table
 
 
 def dealer_moves(table: Table) -> Table:
@@ -168,10 +169,10 @@ def individual_payout(betting_box: BettingBox, result: HandResult) -> int:
     :return: amount of money received after current round
     """
     if result == HandResult.Win:
-        return 2 * betting_box.bet
-    elif result == HandResult.Tie:
         return betting_box.bet
-    return 0
+    elif result == HandResult.Tie:
+        return 0
+    return -1 * betting_box.bet
 
 
 def hand_result(betting_box: BettingBox, dealer: Dealer) -> HandResult:
@@ -181,6 +182,10 @@ def hand_result(betting_box: BettingBox, dealer: Dealer) -> HandResult:
         return HandResult.Win
     elif dealer.hand.is_blackjack():
         return HandResult.Loss
+    elif betting_box.hand.is_busted():
+        return HandResult.Loss
+    elif dealer.hand.is_busted():
+        return HandResult.Win
     else:
         filtered = list(filter(lambda x: x <= 21, betting_box.hand.card_totals()))
         dealer_filtered = list(filter(lambda x: x <= 21, dealer.hand.card_totals()))
@@ -199,6 +204,3 @@ def table_payout(table: Table) -> dict[Player, tuple[HandResult, int]]:
         payout = individual_payout(betting_box, result)
         results[betting_box.player] = result, payout
     return results
-
-
-
