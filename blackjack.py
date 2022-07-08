@@ -199,3 +199,6 @@ def table_payout(table: Table) -> dict[Player, tuple[HandResult, int]]:
         payout = individual_payout(betting_box, result)
         results[betting_box.player] = result, payout
     return results
+
+
+
