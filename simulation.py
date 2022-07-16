@@ -136,3 +136,5 @@ def print_simulation_result(name, simulation):
 # print_simulation_result("Always stay", s)
 s = run_simulation(always_split_when_possible, 10_000)
 print_simulation_result("Split when possible", s)
+
+# TODO if dealer runs out of cards, re-shuffle, and add in CIs for expected values
