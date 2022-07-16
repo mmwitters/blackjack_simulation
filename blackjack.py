@@ -148,10 +148,7 @@ def hit(table: Table) -> Table:
 
 
 def stand(table: Table) -> Table:
-    try:
-        current_betting_box = table.betting_boxes[table.player_turn]
-    except Exception as error:
-        print(error)
+    current_betting_box = table.betting_boxes[table.player_turn]
 
     if current_betting_box.hand.is_busted():
         print(table)
