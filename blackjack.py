@@ -7,16 +7,16 @@ from typing import NamedTuple
 from cards import Deck, Card, Rank
 
 
-def card_value(card: Card) -> list[int]:
+def card_value(card: Card) -> set[int]:
     face_cards = [Rank.JACK,
                   Rank.QUEEN,
                   Rank.KING]
     if card.rank == Rank.ACE:
-        return [1, 11]
+        return {1, 11}
     elif card.rank in face_cards:
-        return [10]
+        return {10}
     else:
-        return [card.rank.value]
+        return {card.rank.value}
 
 
 # TODO do I want to make the card order agnostic?
@@ -60,6 +60,19 @@ class BettingBox(NamedTuple):
     hand: Hand
     player: Player
     bet: int
+    split: bool = False
+
+    def can_split(self) -> bool:
+        if self.hand.is_busted() or len(self.hand.cards) != 2 or self.split:
+            return False
+        return card_value(self.hand.cards[0]) == card_value(self.hand.cards[1])
+
+    def can_double_down(self):
+        if len(self.hand.cards) != 2:
+            return False
+        if split:
+            return False
+        return True
 
     # limited to 5-9 betting boxes total
     # player cannot play more than 3 boxes (US rules)
@@ -100,6 +113,7 @@ class PlayerAction(Enum):
     Hit = auto()
     Stand = auto()
     DoubleDown = auto()
+    Split = auto()
 
 
 @unique
@@ -160,13 +174,9 @@ def stand(table: Table) -> Table:
 def double_down(table: Table) -> Table:
     current_betting_box = table.betting_boxes[table.player_turn]
 
-    if len(current_betting_box.hand.cards) > 2:
+    if not current_betting_box.can_double_down():
         print(table)
         raise Exception("Can't double down after hitting")
-
-    if current_betting_box.hand.is_busted():
-        print(table)
-        raise Exception("Can't Double down Busted Hand")
 
     new_bet = current_betting_box.bet * 2
     card, deck = table.dealer.shoe.draw_card()
@@ -174,6 +184,29 @@ def double_down(table: Table) -> Table:
     table = table.replace_betting_box(table.player_turn, current_betting_box._replace(hand=hand, bet=new_bet))
 
     return table._replace(dealer=table.dealer._replace(shoe=deck))
+
+
+def split(table: Table) -> Table:
+    current_betting_box = table.betting_boxes[table.player_turn]
+    deck = table.dealer.shoe
+
+    if not current_betting_box.can_split():
+        print(table)
+        raise Exception("Can't Split Busted Hand")
+
+    card_1 = current_betting_box.hand.cards[0]
+    card_2 = current_betting_box.hand.cards[1]
+
+    card, deck = deck.draw_card()
+    betting_box1 = BettingBox(Hand([card_1, card]), current_betting_box.player, current_betting_box.bet, split=True)
+    card, deck = deck.draw_card()
+    betting_box2 = BettingBox(Hand([card_2, card]), current_betting_box.player, current_betting_box.bet, split=True)
+
+    betting_boxes = table.betting_boxes[:table.player_turn]
+    betting_boxes += [betting_box1, betting_box2]
+    betting_boxes += table.betting_boxes[table.player_turn + 1:]
+
+    return table._replace(betting_boxes=betting_boxes, dealer=table.dealer._replace(shoe=deck))
 
 
 def dealer_moves(table: Table) -> Table:

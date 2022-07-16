@@ -4,8 +4,8 @@ from math import sqrt
 from random import choice
 from typing import NamedTuple
 
-from blackjack import  Table, PlayerAction, BettingBox, Player, Hand, Dealer, shoe, initial_draw, \
-    table_payout, hit, stand, dealer_moves, double_down
+from blackjack import Table, PlayerAction, BettingBox, Player, Hand, Dealer, shoe, initial_draw, \
+    table_payout, hit, stand, dealer_moves, double_down, split
 from cards import Deck
 
 
@@ -65,9 +65,19 @@ def double_down_on_eleven_fn(table):
 double_down_on_eleven = Strategy(double_down_on_eleven_fn, 10)
 
 
+def split_when_possible(table):
+    betting_box = table.current_player_betting_box()
+    if betting_box.can_split():
+        return PlayerAction.Split
+    return PlayerAction.Stand
+
+
+always_split_when_possible = Strategy(split_when_possible, 10)
+
+
 # INDEPENDENT GAMES
 def run_single_simulation(strategy) -> SimulationResult:
-    dealer = Dealer(Hand([]), shoe(Deck.standard_deck(), 6).shuffle())
+    dealer = Dealer(Hand([]), shoe(Deck.standard_deck(), 1).shuffle())
     table = Table([BettingBox(Hand([]), Player("Maddie"), strategy.bet)], dealer, 0)
     table = initial_draw(table)
     while table.play_in_progress():
@@ -86,6 +96,8 @@ def run_single_simulation(strategy) -> SimulationResult:
         elif action == PlayerAction.DoubleDown:
             table = double_down(table)
             table = table.advance_player()
+        elif action == PlayerAction.Split:
+            table = split(table)
         else:
             raise f"Unknown PlayerAction: {action}"
 
@@ -118,7 +130,9 @@ def print_simulation_result(name, simulation):
 #     means.append(simulation.expected_winnings())
 #     print_simulation_result(f"Hit Below {i}", simulation)
 #
-s = run_simulation(double_down_on_eleven, 10_000)
-print_simulation_result("Double down", s)
-s = run_simulation(always_stay_strategy, 10_000)
-print_simulation_result("Always stay", s)
+# s = run_simulation(double_down_on_eleven, 10_000)
+# print_simulation_result("Double down", s)
+# s = run_simulation(always_stay_strategy, 10_000)
+# print_simulation_result("Always stay", s)
+s = run_simulation(always_split_when_possible, 10_000)
+print_simulation_result("Split when possible", s)
