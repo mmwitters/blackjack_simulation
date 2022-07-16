@@ -89,12 +89,16 @@ class Table(NamedTuple):
     def advance_player(self):
         return self._replace(player_turn=self.player_turn + 1)
 
+    def play_in_progress(self) -> bool:
+        return self.player_turn < len(self.betting_boxes)
+
 
 # TODO add in remaining 3 actions: double down, split, and surrender
 @unique
 class PlayerAction(Enum):
     Hit = auto()
     Stand = auto()
+    DoubleDown = auto()
 
 
 @unique
@@ -143,12 +147,35 @@ def hit(table: Table) -> Table:
 
 
 def stand(table: Table) -> Table:
-    current_betting_box = table.betting_boxes[table.player_turn]
+    try:
+        current_betting_box = table.betting_boxes[table.player_turn]
+    except Exception as error:
+        print(error)
+
     if current_betting_box.hand.is_busted():
         print(table)
         raise Exception("Can't Stand Busted Hand")
 
     return table
+
+
+def double_down(table: Table) -> Table:
+    current_betting_box = table.betting_boxes[table.player_turn]
+
+    if len(current_betting_box.hand.cards) > 2:
+        print(table)
+        raise Exception("Can't double down after hitting")
+
+    if current_betting_box.hand.is_busted():
+        print(table)
+        raise Exception("Can't Double down Busted Hand")
+
+    new_bet = current_betting_box.bet * 2
+    card, deck = table.dealer.shoe.draw_card()
+    hand = current_betting_box.hand.add_card(card)
+    table = table.replace_betting_box(table.player_turn, current_betting_box._replace(hand=hand, bet=new_bet))
+
+    return table._replace(dealer=table.dealer._replace(shoe=deck))
 
 
 def dealer_moves(table: Table) -> Table:
