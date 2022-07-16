@@ -4,7 +4,7 @@ from math import sqrt
 from random import choice
 from typing import NamedTuple
 
-from blackjack import HandResult, Table, PlayerAction, BettingBox, Player, Hand, Dealer, shoe, initial_draw, \
+from blackjack import  Table, PlayerAction, BettingBox, Player, Hand, Dealer, shoe, initial_draw, \
     table_payout, hit, stand, dealer_moves, double_down
 from cards import Deck
 
@@ -12,29 +12,31 @@ from cards import Deck
 # Assumes that the same bet is being used for each hand
 # Assumes result is for a single hand (Split not handled)
 class SimulationResult(NamedTuple):
-    result_counter: Counter[(HandResult, int)]
-    total_winnings: int  # TODO Make this a method using the result_counter
+    result_counter: Counter[int]
 
     def __add__(self, x):
-        return SimulationResult(self.result_counter + x.result_counter, self.total_winnings + x.total_winnings)
+        return SimulationResult(self.result_counter + x.result_counter)
 
     def total_games(self) -> int:
         return sum(self.result_counter.values())
 
     def expected_winnings(self) -> float:
-        return self.total_winnings / self.total_games()
+        return self.total_winnings() / self.total_games()
 
     def sample_variance_winnings(self) -> float:
         expected_winnings = self.expected_winnings()
 
         variance_sum = 0
-        for (hand_result, winnings), occurrences in self.result_counter.items():
+        for winnings, occurrences in self.result_counter.items():
             variance_sum += (winnings - expected_winnings) ** 2
 
         return variance_sum / (self.total_games() - 1)
 
     def sample_std_deviation(self) -> float:
         return sqrt(self.sample_variance_winnings())
+
+    def total_winnings(self):
+        return sum((winnings * occurrences for winnings, occurrences in self.result_counter.items()))
 
 
 class Strategy(NamedTuple):
@@ -88,13 +90,13 @@ def run_single_simulation(strategy) -> SimulationResult:
             raise f"Unknown PlayerAction: {action}"
 
     table = dealer_moves(table)
-    result, payout = table_payout(table)[Player("Maddie")]  # We only care about Maddie for now
-    sim_result = SimulationResult(Counter([(result, payout)]), payout)
+    payout = table_payout(table)[Player("Maddie")]  # We only care about Maddie for now
+    sim_result = SimulationResult(Counter([payout]))
     return sim_result
 
 
 def run_simulation(strategy, num_runs) -> SimulationResult:
-    simulation_result = SimulationResult(Counter(), 0)
+    simulation_result = SimulationResult(Counter())
     for i in range(num_runs):
         simulation_result += run_single_simulation(strategy)
     return simulation_result

@@ -1,3 +1,4 @@
+from collections import Counter
 from dataclasses import dataclass
 from enum import unique, Enum, auto
 from itertools import product
@@ -93,7 +94,7 @@ class Table(NamedTuple):
         return self.player_turn < len(self.betting_boxes)
 
 
-# TODO add in remaining 3 actions: double down, split, and surrender
+# TODO add in remaining action(s): split and possibly surrender (surrender mostly interesting for card counting)
 @unique
 class PlayerAction(Enum):
     Hit = auto()
@@ -224,10 +225,10 @@ def hand_result(betting_box: BettingBox, dealer: Dealer) -> HandResult:
             return HandResult.Tie
 
 
-def table_payout(table: Table) -> dict[Player, tuple[HandResult, int]]:
-    results: dict[Player, tuple[HandResult, int]] = {}
+def table_payout(table: Table) -> Counter[Player, int]:
+    results = Counter()
     for betting_box in table.betting_boxes:
         result = hand_result(betting_box, table.dealer)
         payout = individual_payout(betting_box, result)
-        results[betting_box.player] = result, payout
+        results[betting_box.player] += payout
     return results
