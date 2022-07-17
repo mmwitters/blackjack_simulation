@@ -28,19 +28,20 @@ class SimulationResult(NamedTuple):
 
         variance_sum = 0
         for winnings, occurrences in self.result_counter.items():
-            variance_sum += (winnings - expected_winnings) ** 2
-
-        return variance_sum / (self.total_games() - 1)
+            variance_sum += (winnings ** 2) * occurrences
+        variance_sum /= self.total_games()
+        return variance_sum - (expected_winnings ** 2)
 
     def sample_std_deviation(self) -> float:
         return sqrt(self.sample_variance_winnings())
 
-    def confidence_interval_winnings(self) -> tuple:
-        expected_winnings = self.expected_winnings()
-        sample_std_dev = self.sample_std_deviation()
-        lower_bound = expected_winnings - 1.96*sample_std_dev/sqrt(self.total_games())
-        upper_bound = expected_winnings + 1.96*sample_std_dev/sqrt(self.total_games())
-        return lower_bound, upper_bound
+# TODO rewrite this for use only when simulating multiple rounds with same strategy
+    # def confidence_interval_winnings(self) -> tuple:
+    #     expected_winnings = self.expected_winnings()
+    #     sample_std_dev = self.sample_std_deviation()
+    #     lower_bound = expected_winnings - 1.96*sample_std_dev/sqrt(self.total_games())
+    #     upper_bound = expected_winnings + 1.96*sample_std_dev/sqrt(self.total_games())
+    #     return lower_bound, upper_bound
 
 
     def total_winnings(self):
@@ -128,19 +129,18 @@ def print_simulation_result(name, simulation):
     print(f"Mean: {simulation.expected_winnings()}")
     print(f"Sample Variance: {simulation.sample_variance_winnings()}")
     print(f"Sample standard deviation: {simulation.sample_std_deviation()} ")
-    print(f"95% Confidence Interval: {simulation.confidence_interval_winnings()} ")
     print("")
 
 
-# means = []
-# for i in range(1, 20):
-#     simulation = run_simulation(Strategy(lambda table: PlayerAction.Stand if min(
-#         table.current_player_betting_box().hand.card_totals()) >= i else PlayerAction.Hit, 10), 1000)
-#     means.append(simulation.expected_winnings())
-#     print_simulation_result(f"Hit Below {i}", simulation)
+means = []
+for i in range(1, 20):
+    simulation = run_simulation(Strategy(lambda table: PlayerAction.Stand if min(
+        table.current_player_betting_box().hand.card_totals()) >= i else PlayerAction.Hit, 10), 10000)
+    means.append(simulation.expected_winnings())
+    print_simulation_result(f"Hit Below {i}", simulation)
 #
-s = run_simulation(double_down_on_eleven, 10_000)
-print_simulation_result("Double down", s)
+# s = run_simulation(double_down_on_eleven, 10_000)
+# print_simulation_result("Double down", s)
 # s = run_simulation(always_stay_strategy, 10_000)
 # print_simulation_result("Always stay", s)
 # s = run_simulation(always_split_when_possible, 10_000)
