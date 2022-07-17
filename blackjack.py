@@ -70,7 +70,7 @@ class BettingBox(NamedTuple):
     def can_double_down(self):
         if len(self.hand.cards) != 2:
             return False
-        if split:
+        if self.split:
             return False
         return True
 
@@ -107,7 +107,7 @@ class Table(NamedTuple):
         return self.player_turn < len(self.betting_boxes)
 
 
-# TODO add in remaining action(s): split and possibly surrender (surrender mostly interesting for card counting)
+# TODO possible add in surrender (surrender mostly interesting for card counting)
 @unique
 class PlayerAction(Enum):
     Hit = auto()

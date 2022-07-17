@@ -38,8 +38,8 @@ class SimulationResult(NamedTuple):
     def confidence_interval_winnings(self) -> tuple:
         expected_winnings = self.expected_winnings()
         sample_std_dev = self.sample_std_deviation()
-        lower_bound = expected_winnings - 1.96*(sample_std_dev/sqrt(self.total_games()))
-        upper_bound = expected_winnings + 1.96*(sample_std_dev/sqrt(self.total_games()))
+        lower_bound = expected_winnings - 1.96*sample_std_dev/sqrt(self.total_games())
+        upper_bound = expected_winnings + 1.96*sample_std_dev/sqrt(self.total_games())
         return lower_bound, upper_bound
 
 
@@ -139,11 +139,13 @@ def print_simulation_result(name, simulation):
 #     means.append(simulation.expected_winnings())
 #     print_simulation_result(f"Hit Below {i}", simulation)
 #
-# s = run_simulation(double_down_on_eleven, 10_000)
-# print_simulation_result("Double down", s)
-s = run_simulation(always_stay_strategy, 10_000)
-print_simulation_result("Always stay", s)
+s = run_simulation(double_down_on_eleven, 10_000)
+print_simulation_result("Double down", s)
+# s = run_simulation(always_stay_strategy, 10_000)
+# print_simulation_result("Always stay", s)
 # s = run_simulation(always_split_when_possible, 10_000)
 # print_simulation_result("Split when possible", s)
 
-# TODO if dealer runs out of cards, re-shuffle, double-check CI implementation, fix bug for doubling-down
+# TODO if dealer runs out of cards, re-shuffle
+# TODO implement ability to simulate multiple rounds with same strategy; then output mean result and min/max and CIs
+# TODO implement "known" strategy (as closely as possible)
