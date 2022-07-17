@@ -35,6 +35,14 @@ class SimulationResult(NamedTuple):
     def sample_std_deviation(self) -> float:
         return sqrt(self.sample_variance_winnings())
 
+    def confidence_interval_winnings(self) -> tuple:
+        expected_winnings = self.expected_winnings()
+        sample_std_dev = self.sample_std_deviation()
+        lower_bound = expected_winnings - 1.96*(sample_std_dev/sqrt(self.total_games()))
+        upper_bound = expected_winnings + 1.96*(sample_std_dev/sqrt(self.total_games()))
+        return lower_bound, upper_bound
+
+
     def total_winnings(self):
         return sum((winnings * occurrences for winnings, occurrences in self.result_counter.items()))
 
@@ -120,6 +128,7 @@ def print_simulation_result(name, simulation):
     print(f"Mean: {simulation.expected_winnings()}")
     print(f"Sample Variance: {simulation.sample_variance_winnings()}")
     print(f"Sample standard deviation: {simulation.sample_std_deviation()} ")
+    print(f"95% Confidence Interval: {simulation.confidence_interval_winnings()} ")
     print("")
 
 
@@ -132,9 +141,9 @@ def print_simulation_result(name, simulation):
 #
 # s = run_simulation(double_down_on_eleven, 10_000)
 # print_simulation_result("Double down", s)
-# s = run_simulation(always_stay_strategy, 10_000)
-# print_simulation_result("Always stay", s)
-s = run_simulation(always_split_when_possible, 10_000)
-print_simulation_result("Split when possible", s)
+s = run_simulation(always_stay_strategy, 10_000)
+print_simulation_result("Always stay", s)
+# s = run_simulation(always_split_when_possible, 10_000)
+# print_simulation_result("Split when possible", s)
 
-# TODO if dealer runs out of cards, re-shuffle, and add in CIs for expected values
+# TODO if dealer runs out of cards, re-shuffle, double-check CI implementation, fix bug for doubling-down
