@@ -83,10 +83,45 @@ def split_when_possible(table):
 
 always_split_when_possible = Strategy(split_when_possible, 10)
 
+def known_strategy(table): #implemented when dealer stands on soft 17
+    player_hand_totals = max(table.current_player_betting_box().hand.card_totals())
+    dealer_hand_totals = table.dealer.hand.card_totals()[0]
+    if not player_hand_totals.is_soft(): #if player hand is hard
+        if player_hand_totals <= 8:
+            return PlayerAction.Hit
+        elif player_hand_totals == 9:
+            if dealer_hand_totals in [2,7,8,9,10,11]:
+                return PlayerAction.Hit
+            else:
+                return PlayerAction.DoubleDown
+        elif player_hand_totals == 10:
+            if dealer_hand_totals <= 9:
+                return PlayerAction.DoubleDown
+            else:
+                return PlayerAction.Hit
+        elif player_hand_totals == 11:
+            if dealer_hand_totals <= 10:
+                return PlayerAction.DoubleDown
+            else:
+                return PlayerAction.Hit
+        elif player_hand_totals == 12:
+            if dealer_hand_totals not in [4,5,6]:
+                return PlayerAction.Hit
+            else:
+                return PlayerAction.Stand
+        elif 13 <= player_hand_totals <= 16:
+            if dealer_hand_totals <= 6:
+                return PlayerAction.Stand
+            else:
+                return PlayerAction.Hit
+        elif player_hand_totals >= 17:
+            return PlayerAction.Stand
+
+
 
 # INDEPENDENT GAMES
 def run_single_simulation(strategy) -> SimulationResult:
-    dealer = Dealer(Hand([]), shoe(Deck.standard_deck(), 1).shuffle())
+    dealer = Dealer(Hand([]), shoe(Deck.standard_deck(), 6).shuffle())
     table = Table([BettingBox(Hand([]), Player("Maddie"), strategy.bet)], dealer, 0)
     table = initial_draw(table)
     while table.play_in_progress():
