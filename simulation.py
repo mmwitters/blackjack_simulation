@@ -86,7 +86,11 @@ always_split_when_possible = Strategy(split_when_possible, 10)
 def known_strategy(table): #implemented when dealer stands on soft 17
     player_hand_totals = max(table.current_player_betting_box().hand.card_totals())
     dealer_hand_totals = table.dealer.hand.card_totals()[0]
-    if not player_hand_totals.is_soft(): #if player hand is hard
+    if table.current_player_betting_box().can_split():
+        pass
+    # TODO write logic for when a player can split their cards
+
+    elif not player_hand_totals.is_soft(): #if player hand is hard
         if player_hand_totals <= 8:
             return PlayerAction.Hit
         elif player_hand_totals == 9:
@@ -115,6 +119,31 @@ def known_strategy(table): #implemented when dealer stands on soft 17
             else:
                 return PlayerAction.Hit
         elif player_hand_totals >= 17:
+            return PlayerAction.Stand
+    elif player_hand_totals.is_soft(): #if player hand is soft
+        if player_hand_totals <= 14:
+            if dealer_hand_totals <= 4 or dealer_hand_totals >= 7:
+                return PlayerAction.Hit
+            else:
+                return PlayerAction.DoubleDown
+        elif player_hand_totals <= 16:
+            if dealer_hand_totals < 4 or dealer_hand_totals >= 7:
+                return PlayerAction.Hit
+            else:
+                return PlayerAction.DoubleDown
+        elif player_hand_totals == 17:
+            if dealer_hand_totals == 2 or dealer_hand_totals >= 7:
+                return PlayerAction.Hit
+            else:
+                return PlayerAction.DoubleDown
+        elif player_hand_totals == 18:
+            if dealer_hand_totals in [2,7,8]:
+                return PlayerAction.Stand
+            elif dealer_hand_totals > 2 and dealer_hand_totals <= 6:
+                return PlayerAction.DoubleDown
+            else:
+                return PlayerAction.Hit
+        elif player_hand_totals == 19:
             return PlayerAction.Stand
 
 
