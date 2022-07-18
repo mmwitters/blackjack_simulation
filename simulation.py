@@ -83,14 +83,38 @@ def split_when_possible(table):
 
 always_split_when_possible = Strategy(split_when_possible, 10)
 
+# TODO fix "Can't double-down after hitting" error (need to fix according to chart for hard and soft hands)
 def known_strategy(table): #implemented when dealer stands on soft 17
     player_hand_totals = max(table.current_player_betting_box().hand.card_totals())
-    dealer_hand_totals = table.dealer.hand.card_totals()[0]
+    dealer_hand_totals = table.dealer.hand.card_totals().pop()
     if table.current_player_betting_box().can_split():
-        pass
-    # TODO write logic for when a player can split their cards
-
-    elif not player_hand_totals.is_soft(): #if player hand is hard
+        if player_hand_totals == 4 or player_hand_totals == 6:
+            if dealer_hand_totals < 4 or dealer_hand_totals > 7:
+                return PlayerAction.Hit
+            else:
+                return PlayerAction.Split
+        elif player_hand_totals == 8:
+            return PlayerAction.Hit
+        elif player_hand_totals == 12:
+            if dealer_hand_totals == 2 or dealer_hand_totals >= 7:
+                return PlayerAction.Hit
+            else:
+                return PlayerAction.Split
+        elif player_hand_totals == 14:
+            if dealer_hand_totals <= 7:
+                return PlayerAction.Split
+            else:
+                return PlayerAction.Hit
+        elif player_hand_totals == 16:
+            return PlayerAction.Split
+        elif player_hand_totals == 18:
+            if dealer_hand_totals not in [7,10,11]:
+                return PlayerAction.Split
+            else:
+                return PlayerAction.Stand
+        elif player_hand_totals == 2:
+            return PlayerAction.Split
+    elif not table.current_player_betting_box().hand.is_soft(): #if player hand is hard
         if player_hand_totals <= 8:
             return PlayerAction.Hit
         elif player_hand_totals == 9:
@@ -120,7 +144,7 @@ def known_strategy(table): #implemented when dealer stands on soft 17
                 return PlayerAction.Hit
         elif player_hand_totals >= 17:
             return PlayerAction.Stand
-    elif player_hand_totals.is_soft(): #if player hand is soft
+    elif table.current_player_betting_box().hand.is_soft(): #if player hand is soft
         if player_hand_totals <= 14:
             if dealer_hand_totals <= 4 or dealer_hand_totals >= 7:
                 return PlayerAction.Hit
@@ -146,7 +170,7 @@ def known_strategy(table): #implemented when dealer stands on soft 17
         elif player_hand_totals == 19:
             return PlayerAction.Stand
 
-
+play_known_strategy = Strategy(known_strategy, 10)
 
 # INDEPENDENT GAMES
 def run_single_simulation(strategy) -> SimulationResult:
@@ -172,7 +196,7 @@ def run_single_simulation(strategy) -> SimulationResult:
         elif action == PlayerAction.Split:
             table = split(table)
         else:
-            raise f"Unknown PlayerAction: {action}"
+            raise Exception(f"Unknown PlayerAction: {action}")
 
     table = dealer_moves(table)
     payout = table_payout(table)[Player("Maddie")]  # We only care about Maddie for now
@@ -196,12 +220,12 @@ def print_simulation_result(name, simulation):
     print("")
 
 
-means = []
-for i in range(1, 20):
-    simulation = run_simulation(Strategy(lambda table: PlayerAction.Stand if min(
-        table.current_player_betting_box().hand.card_totals()) >= i else PlayerAction.Hit, 10), 10000)
-    means.append(simulation.expected_winnings())
-    print_simulation_result(f"Hit Below {i}", simulation)
+# means = []
+# for i in range(1, 20):
+#     simulation = run_simulation(Strategy(lambda table: PlayerAction.Stand if min(
+#         table.current_player_betting_box().hand.card_totals()) >= i else PlayerAction.Hit, 10), 10000)
+#     means.append(simulation.expected_winnings())
+#     print_simulation_result(f"Hit Below {i}", simulation)
 #
 # s = run_simulation(double_down_on_eleven, 10_000)
 # print_simulation_result("Double down", s)
@@ -209,6 +233,9 @@ for i in range(1, 20):
 # print_simulation_result("Always stay", s)
 # s = run_simulation(always_split_when_possible, 10_000)
 # print_simulation_result("Split when possible", s)
+
+s = run_simulation(play_known_strategy, 1000)
+print_simulation_result("Known Strategy", s)
 
 # TODO if dealer runs out of cards, re-shuffle
 # TODO implement ability to simulate multiple rounds with same strategy; then output mean result and min/max and CIs

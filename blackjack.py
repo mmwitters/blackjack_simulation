@@ -43,9 +43,7 @@ class Hand:
         return False
 
     def is_soft(self):
-        if Card.rank.ACE in self.cards:
-            return True
-        return False
+        return any(card.rank == Rank.ACE for card in self.cards)
 
     @classmethod
     def emptyHand(cls):
