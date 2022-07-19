@@ -27,6 +27,14 @@ class Hand:
     def card_totals(self) -> set[int]:
         return set(map(sum, product(*list(map(card_value, self.cards)))))
 
+    def largest_card_total(self) -> int:
+        totals = self.card_totals()
+        rev_set = set()
+        for total in totals:
+            if total <= 21:
+                rev_set.add(total)
+        return max(rev_set)
+
     def is_busted(self) -> bool:
         for element in self.card_totals():
             if element <= 21:

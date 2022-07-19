@@ -35,14 +35,13 @@ class SimulationResult(NamedTuple):
     def sample_std_deviation(self) -> float:
         return sqrt(self.sample_variance_winnings())
 
-# TODO rewrite this for use only when simulating multiple rounds with same strategy
+    # TODO rewrite this for use only when simulating multiple rounds with same strategy
     # def confidence_interval_winnings(self) -> tuple:
     #     expected_winnings = self.expected_winnings()
     #     sample_std_dev = self.sample_std_deviation()
     #     lower_bound = expected_winnings - 1.96*sample_std_dev/sqrt(self.total_games())
     #     upper_bound = expected_winnings + 1.96*sample_std_dev/sqrt(self.total_games())
     #     return lower_bound, upper_bound
-
 
     def total_winnings(self):
         return sum((winnings * occurrences for winnings, occurrences in self.result_counter.items()))
@@ -83,9 +82,10 @@ def split_when_possible(table):
 
 always_split_when_possible = Strategy(split_when_possible, 10)
 
+
 # TODO fix "Can't double-down after hitting" error (need to fix according to chart for hard and soft hands)
-def known_strategy(table): #implemented when dealer stands on soft 17
-    player_hand_totals = max(table.current_player_betting_box().hand.card_totals())
+def known_strategy(table):  # implemented when dealer stands on soft 17
+    player_hand_totals = table.current_player_betting_box().hand.largest_card_total()
     dealer_hand_totals = table.dealer.hand.card_totals().pop()
     if table.current_player_betting_box().can_split():
         if player_hand_totals == 4 or player_hand_totals == 6:
@@ -95,6 +95,11 @@ def known_strategy(table): #implemented when dealer stands on soft 17
                 return PlayerAction.Split
         elif player_hand_totals == 8:
             return PlayerAction.Hit
+        elif player_hand_totals == 10:
+            if dealer_hand_totals < 10 and table.current_player_betting_box().can_double_down():
+                return PlayerAction.DoubleDown
+            else:
+                return PlayerAction.Hit
         elif player_hand_totals == 12:
             if dealer_hand_totals == 2 or dealer_hand_totals >= 7:
                 return PlayerAction.Hit
@@ -108,32 +113,36 @@ def known_strategy(table): #implemented when dealer stands on soft 17
         elif player_hand_totals == 16:
             return PlayerAction.Split
         elif player_hand_totals == 18:
-            if dealer_hand_totals not in [7,10,11]:
+            if dealer_hand_totals not in [7, 10, 11]:
                 return PlayerAction.Split
             else:
                 return PlayerAction.Stand
         elif player_hand_totals == 2:
             return PlayerAction.Split
-    elif not table.current_player_betting_box().hand.is_soft(): #if player hand is hard
+        elif player_hand_totals == 20:
+            return PlayerAction.Stand
+    elif not table.current_player_betting_box().hand.is_soft():  # if player hand is hard
         if player_hand_totals <= 8:
             return PlayerAction.Hit
         elif player_hand_totals == 9:
-            if dealer_hand_totals in [2,7,8,9,10,11]:
+            if dealer_hand_totals in [2, 7, 8, 9, 10, 11]:
                 return PlayerAction.Hit
-            else:
+            elif table.current_player_betting_box().can_double_down():
                 return PlayerAction.DoubleDown
+            else:
+                return PlayerAction.Hit
         elif player_hand_totals == 10:
-            if dealer_hand_totals <= 9:
+            if dealer_hand_totals <= 9 and table.current_player_betting_box().can_double_down():
                 return PlayerAction.DoubleDown
             else:
                 return PlayerAction.Hit
         elif player_hand_totals == 11:
-            if dealer_hand_totals <= 10:
+            if dealer_hand_totals <= 10 and table.current_player_betting_box().can_double_down():
                 return PlayerAction.DoubleDown
             else:
                 return PlayerAction.Hit
         elif player_hand_totals == 12:
-            if dealer_hand_totals not in [4,5,6]:
+            if dealer_hand_totals not in [4, 5, 6]:
                 return PlayerAction.Hit
             else:
                 return PlayerAction.Stand
@@ -144,33 +153,39 @@ def known_strategy(table): #implemented when dealer stands on soft 17
                 return PlayerAction.Hit
         elif player_hand_totals >= 17:
             return PlayerAction.Stand
-    elif table.current_player_betting_box().hand.is_soft(): #if player hand is soft
+    else:  # if player hand is soft
         if player_hand_totals <= 14:
             if dealer_hand_totals <= 4 or dealer_hand_totals >= 7:
                 return PlayerAction.Hit
-            else:
+            elif table.current_player_betting_box().can_double_down():
                 return PlayerAction.DoubleDown
+            else:
+                return PlayerAction.Hit
         elif player_hand_totals <= 16:
-            if dealer_hand_totals < 4 or dealer_hand_totals >= 7:
+            if dealer_hand_totals < 4 or dealer_hand_totals >= 7 or not table.current_player_betting_box().can_double_down():
                 return PlayerAction.Hit
             else:
                 return PlayerAction.DoubleDown
         elif player_hand_totals == 17:
-            if dealer_hand_totals == 2 or dealer_hand_totals >= 7:
+            if dealer_hand_totals == 2 or dealer_hand_totals >= 7 or not table.current_player_betting_box().can_double_down():
                 return PlayerAction.Hit
             else:
                 return PlayerAction.DoubleDown
         elif player_hand_totals == 18:
-            if dealer_hand_totals in [2,7,8]:
+            if dealer_hand_totals in [2, 7, 8] or not table.current_player_betting_box().can_double_down():
                 return PlayerAction.Stand
             elif dealer_hand_totals > 2 and dealer_hand_totals <= 6:
                 return PlayerAction.DoubleDown
             else:
                 return PlayerAction.Hit
-        elif player_hand_totals == 19:
+        elif player_hand_totals >= 19:
             return PlayerAction.Stand
+    print(table)
+    print(player_hand_totals)
+
 
 play_known_strategy = Strategy(known_strategy, 10)
+
 
 # INDEPENDENT GAMES
 def run_single_simulation(strategy) -> SimulationResult:
@@ -182,10 +197,12 @@ def run_single_simulation(strategy) -> SimulationResult:
             table = table.advance_player()
             continue
 
-        action = strategy.get_action(table)
         if table.current_player_betting_box().hand.is_busted():
             table = table.advance_player()
-        elif action == PlayerAction.Hit:
+            continue
+
+        action = strategy.get_action(table)
+        if action == PlayerAction.Hit:
             table = hit(table)
         elif action == PlayerAction.Stand:
             table = stand(table)
@@ -229,12 +246,12 @@ def print_simulation_result(name, simulation):
 #
 # s = run_simulation(double_down_on_eleven, 10_000)
 # print_simulation_result("Double down", s)
-# s = run_simulation(always_stay_strategy, 10_000)
-# print_simulation_result("Always stay", s)
+s = run_simulation(always_stay_strategy, 10_000)
+print_simulation_result("Always stay", s)
 # s = run_simulation(always_split_when_possible, 10_000)
 # print_simulation_result("Split when possible", s)
 
-s = run_simulation(play_known_strategy, 1000)
+s = run_simulation(play_known_strategy, 10_000)
 print_simulation_result("Known Strategy", s)
 
 # TODO if dealer runs out of cards, re-shuffle
