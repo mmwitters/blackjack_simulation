@@ -3,8 +3,8 @@ from collections import Counter
 from math import sqrt
 from random import choice
 from typing import NamedTuple
-from numpy import numpy as np
-from matplotlib import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib import pyplot as plt
 
 from progressbar import progressbar
 from blackjack import Table, PlayerAction, BettingBox, Player, Hand, Dealer, shoe, initial_draw, \
@@ -50,10 +50,10 @@ class SimulationResult(NamedTuple):
 
     def percentage_games_profitable(self):
         count = 0
-        for winnings in self.result_counter:
+        for winnings, occurrences in self.result_counter.items():
             if winnings >= 0:
-                count += 1
-        return count/len(self.result_counter)
+                count += occurrences
+        return count/self.total_games()
 
     def range(self) -> tuple:
         min_winnings = min(self.result_counter)
@@ -61,15 +61,16 @@ class SimulationResult(NamedTuple):
         return min_winnings, max_winnings
 
     def create_hist(self):
-
+        labels, values = zip(*sorted(self.result_counter.items()))
+        indexes = np.arange(len(labels))
+        width = 1
+        plt.bar(indexes, values, width)
+        plt.xticks(indexes + width * 0.5, labels)
+        plt.show()
 
 class Strategy(NamedTuple):
     get_action: typing.Callable[[Table], PlayerAction]
     bet: int
-    # actions chosen randomly
-    # always staying
-    # use "optimal" blackjack rules
-    # card counting (?)
 
 
 always_stay_strategy = Strategy(lambda table: PlayerAction.Stand, 10)
@@ -259,6 +260,7 @@ def print_simulation_result(name, simulation):
     print(f"95% Confidence Interval: {simulation.confidence_interval_winnings()}" )
     print(f"% of Games Profitable (winnings >= 0): {simulation.percentage_games_profitable()}")
     print(f"Range of Winnings: {simulation.range()}")
+    print(f"Showing Histogram {simulation.create_hist()}")
     print("")
 
 
@@ -280,5 +282,7 @@ s = run_simulation_multi_round(play_known_strategy, 100, 1000)
 print_simulation_result("Known Strategy", s)
 
 # TODO if dealer runs out of cards, re-shuffle
-# TODO implement ability to simulate multiple rounds with same strategy; then output mean result and min/max and CIs
+# TODO fix histogram output
+# TODO set seed for replications
+# TODO clean up known strategy and remaining code
 
