@@ -3,6 +3,8 @@ from collections import Counter
 from math import sqrt
 from random import choice
 from typing import NamedTuple
+from numpy import numpy as np
+from matplotlib import matplotlib.pyplot as plt
 
 from progressbar import progressbar
 from blackjack import Table, PlayerAction, BettingBox, Player, Hand, Dealer, shoe, initial_draw, \
@@ -45,6 +47,20 @@ class SimulationResult(NamedTuple):
 
     def total_winnings(self):
         return sum((winnings * occurrences for winnings, occurrences in self.result_counter.items()))
+
+    def percentage_games_profitable(self):
+        count = 0
+        for winnings in self.result_counter:
+            if winnings >= 0:
+                count += 1
+        return count/len(self.result_counter)
+
+    def range(self) -> tuple:
+        min_winnings = min(self.result_counter)
+        max_winnings = max(self.result_counter)
+        return min_winnings, max_winnings
+
+    def create_hist(self):
 
 
 class Strategy(NamedTuple):
@@ -241,6 +257,8 @@ def print_simulation_result(name, simulation):
     print(f"Sample Variance: {simulation.sample_variance_winnings()}")
     print(f"Sample standard deviation: {simulation.sample_std_deviation()} ")
     print(f"95% Confidence Interval: {simulation.confidence_interval_winnings()}" )
+    print(f"% of Games Profitable (winnings >= 0): {simulation.percentage_games_profitable()}")
+    print(f"Range of Winnings: {simulation.range()}")
     print("")
 
 
@@ -258,7 +276,7 @@ def print_simulation_result(name, simulation):
 # s = run_simulation_multi_round(always_split_when_possible, 100, 2000)
 # print_simulation_result("Split when possible", s)
 
-s = run_simulation_multi_round(play_known_strategy, 100, 2000)
+s = run_simulation_multi_round(play_known_strategy, 100, 1000)
 print_simulation_result("Known Strategy", s)
 
 # TODO if dealer runs out of cards, re-shuffle
