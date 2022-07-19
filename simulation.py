@@ -4,6 +4,7 @@ from math import sqrt
 from random import choice
 from typing import NamedTuple
 
+from progressbar import progressbar
 from blackjack import Table, PlayerAction, BettingBox, Player, Hand, Dealer, shoe, initial_draw, \
     table_payout, hit, stand, dealer_moves, double_down, split
 from cards import Deck
@@ -35,13 +36,12 @@ class SimulationResult(NamedTuple):
     def sample_std_deviation(self) -> float:
         return sqrt(self.sample_variance_winnings())
 
-    # TODO rewrite this for use only when simulating multiple rounds with same strategy
-    # def confidence_interval_winnings(self) -> tuple:
-    #     expected_winnings = self.expected_winnings()
-    #     sample_std_dev = self.sample_std_deviation()
-    #     lower_bound = expected_winnings - 1.96*sample_std_dev/sqrt(self.total_games())
-    #     upper_bound = expected_winnings + 1.96*sample_std_dev/sqrt(self.total_games())
-    #     return lower_bound, upper_bound
+    def confidence_interval_winnings(self) -> tuple:
+        expected_winnings = self.expected_winnings()
+        sample_std_dev = self.sample_std_deviation()
+        lower_bound = expected_winnings - 1.96*sample_std_dev/sqrt(self.total_games())
+        upper_bound = expected_winnings + 1.96*sample_std_dev/sqrt(self.total_games())
+        return lower_bound, upper_bound
 
     def total_winnings(self):
         return sum((winnings * occurrences for winnings, occurrences in self.result_counter.items()))
@@ -83,7 +83,6 @@ def split_when_possible(table):
 always_split_when_possible = Strategy(split_when_possible, 10)
 
 
-# TODO fix "Can't double-down after hitting" error (need to fix according to chart for hard and soft hands)
 def known_strategy(table):  # implemented when dealer stands on soft 17
     player_hand_totals = table.current_player_betting_box().hand.largest_card_total()
     dealer_hand_totals = table.dealer.hand.card_totals().pop()
@@ -180,8 +179,6 @@ def known_strategy(table):  # implemented when dealer stands on soft 17
                 return PlayerAction.Hit
         elif player_hand_totals >= 19:
             return PlayerAction.Stand
-    print(table)
-    print(player_hand_totals)
 
 
 play_known_strategy = Strategy(known_strategy, 10)
@@ -228,12 +225,22 @@ def run_simulation(strategy, num_runs) -> SimulationResult:
     return simulation_result
 
 
+def run_simulation_multi_round(strategy, num_rounds, num_runs) -> SimulationResult:
+    simulation_result = SimulationResult(Counter())
+    for i in progressbar(range(num_runs)):
+        individual_performance = run_simulation(strategy, num_rounds)
+        simulation_result += SimulationResult(Counter([individual_performance.total_winnings()]))
+    return simulation_result
+
 def print_simulation_result(name, simulation):
     print(name)
     print(simulation)
+    for k, v in simulation.result_counter.items():
+        print(f"{k}, {v}")
     print(f"Mean: {simulation.expected_winnings()}")
     print(f"Sample Variance: {simulation.sample_variance_winnings()}")
     print(f"Sample standard deviation: {simulation.sample_std_deviation()} ")
+    print(f"95% Confidence Interval: {simulation.confidence_interval_winnings()}" )
     print("")
 
 
@@ -246,14 +253,14 @@ def print_simulation_result(name, simulation):
 #
 # s = run_simulation(double_down_on_eleven, 10_000)
 # print_simulation_result("Double down", s)
-s = run_simulation(always_stay_strategy, 10_000)
-print_simulation_result("Always stay", s)
-# s = run_simulation(always_split_when_possible, 10_000)
+# s = run_simulation_multi_round(always_stay_strategy, 100, 100)
+# print_simulation_result("Always stay", s)
+# s = run_simulation_multi_round(always_split_when_possible, 100, 2000)
 # print_simulation_result("Split when possible", s)
 
-s = run_simulation(play_known_strategy, 10_000)
+s = run_simulation_multi_round(play_known_strategy, 100, 2000)
 print_simulation_result("Known Strategy", s)
 
 # TODO if dealer runs out of cards, re-shuffle
 # TODO implement ability to simulate multiple rounds with same strategy; then output mean result and min/max and CIs
-# TODO implement "known" strategy (as closely as possible)
+
