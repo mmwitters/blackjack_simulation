@@ -35,6 +35,5 @@ class DeckTests(unittest.TestCase):
         self.assertEqual(deck3, Deck([]))
 
 
-
 if __name__ == '__main__':
     unittest.main()
