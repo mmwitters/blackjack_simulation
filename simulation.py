@@ -285,7 +285,7 @@ def print_simulation_result(name, simulation):
     print("")
 
 
-def joint_histogram(strategies, num_rounds=100, num_runs=2000):
+def joint_histogram(strategies, num_rounds=100, num_runs=100_000):
     for name, strategy in strategies:
         s = run_simulation_multi_round(strategy, num_rounds, num_runs)
         print_simulation_result(name, s)
@@ -295,22 +295,24 @@ def joint_histogram(strategies, num_rounds=100, num_runs=2000):
     plt.show()
 
 
-def individual_histogram(name, strategy, num_rounds=100, num_runs=1000):
+def individual_histogram(name, strategy, num_rounds=100, num_runs=100_000):
     s = run_simulation_multi_round(strategy, num_rounds, num_runs)
     mean = s.expected_winnings()
     print_simulation_result(name, s)
     s.create_hist(name)
     plt.axvline(mean, linewidth=2, linestyle="--", color="black")
     plt.legend()
-    plt.title(f"Profit/Loss for {num_rounds} Rounds Simulated {num_runs} Times\n{name}")
+    plt.title(f"Profit/Loss for {num_rounds} Rounds Simulated {num_runs} Times")
     plt.show()
 
-# individual_histogram("Random Action", choose_random_strategy, num_rounds=10, num_runs=1000)
-# individual_histogram("Always Stay", always_stay_strategy, num_rounds=10, num_runs=1000)
-# individual_histogram("Hit Under 17", hit_under_seventeen, num_rounds=10, num_runs=1000)
-# individual_histogram("Always Double Down", always_double_down, num_rounds=10, num_runs=1000)
-# individual_histogram("Split When Possible", always_split_when_possible, num_rounds=10, num_runs=1000)
-# individual_histogram("Known Strategy", play_known_strategy, num_rounds=10, num_runs=1000)
+
+# TODO figure out how to generate plots iteratively (no pausing/uncommenting required)
+# individual_histogram("Random Action", choose_random_strategy)
+# individual_histogram("Always Stay", always_stay_strategy)
+# individual_histogram("Hit Under 17", hit_under_seventeen)
+# individual_histogram("Always Double Down", always_double_down)
+# individual_histogram("Split When Possible", always_split_when_possible)
+# individual_histogram("Known Strategy", play_known_strategy)
 
 
 # strategies = [("Known Strategy", play_known_strategy),
@@ -318,5 +320,3 @@ def individual_histogram(name, strategy, num_rounds=100, num_runs=1000):
 # ("Always Double Down", always_double_down)]
 #
 # joint_histogram(strategies)
-
-# TODO clean up known strategy and remaining code
