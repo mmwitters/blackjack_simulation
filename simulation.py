@@ -14,7 +14,6 @@ seed(5)
 
 
 # Assumes that the same bet is being used for each hand
-# Assumes result is for a single hand (Split not handled)
 class SimulationResult(NamedTuple):
     result_counter: Counter[int]
 
@@ -77,6 +76,15 @@ always_stay_strategy = Strategy(lambda table: PlayerAction.Stand, 10)
 always_hit_strategy = Strategy(lambda table: PlayerAction.Hit, 10)
 always_double_down = Strategy(lambda table: PlayerAction.DoubleDown, 10)
 
+
+def hit_under_seventeen_fn(table):
+    if min(table.current_player_betting_box().hand.card_totals()) < 17:
+        return PlayerAction.Hit
+    else:
+        return PlayerAction.Stand
+
+
+hit_under_seventeen = Strategy(hit_under_seventeen_fn, 10)
 
 def random_strategy_fn(table):
     choices = [PlayerAction.Hit, PlayerAction.Stand]
@@ -292,7 +300,7 @@ def print_simulation_result(name, simulation):
 # s = run_simulation_multi_round(play_known_strategy, 100, 1000)
 # print_simulation_result("Known Strategy", s)
 
-def joint_histogram(strategies, num_rounds=100, num_runs=20_000):
+def joint_histogram(strategies, num_rounds=100, num_runs=2000):
     for name, strategy in strategies:
         s = run_simulation_multi_round(strategy, num_rounds, num_runs)
         print_simulation_result(name, s)
@@ -305,26 +313,29 @@ def joint_histogram(strategies, num_rounds=100, num_runs=20_000):
 # strategies = [("Known Strategy", play_known_strategy),
 # ("Always Stay", always_stay_strategy),
 # ("Always Double Down", always_double_down)]
-
+#
 # joint_histogram(strategies)
+
 def individual_histogram(name, strategy, num_rounds=100, num_runs=1000):
     s = run_simulation_multi_round(strategy, num_rounds, num_runs)
+    mean = s.expected_winnings()
     print_simulation_result(name, s)
     s.create_hist(name)
+    plt.axvline(mean, linewidth=2, linestyle="--", color="black")
     plt.legend()
-    plt.title(f"Profit/Loss for {num_rounds} Rounds Simulated {num_runs} Times")
+    plt.title(f"Profit/Loss for {num_rounds} Rounds Simulated {num_runs} Times\n{name}")
     plt.show()
 
 
-# individual_histogram("Known Strategy", play_known_strategy, num_rounds=10, num_runs=1000)
+individual_histogram("Known Strategy", play_known_strategy, num_rounds=10, num_runs=1000)
 # individual_histogram("Always Stay", always_stay_strategy, num_rounds=10, num_runs=1000)
-# individual_histogram("Always Hit", always_hit_strategy, num_rounds=10, num_runs=1000) #hit <= 16
+#individual_histogram("Hit Under 17", hit_under_seventeen, num_rounds=10, num_runs=1000)
 # individual_histogram("Always Double Down", always_double_down, num_rounds=10, num_runs=1000)
-# individual_histogram("Split When Possible", always_split_when_possible, num_rounds=10, num_runs=1000)
+#individual_histogram("Split When Possible", always_split_when_possible, num_rounds=10, num_runs=1000)
 #individual_histogram("Random Action", choose_random_strategy, num_rounds=10, num_runs=1000)
 
 
-strategies = map(lambda i: (f"Hit under {i}", Strategy(lambda table: PlayerAction.Stand if min(
-    table.current_player_betting_box().hand.card_totals()) >= i else PlayerAction.Hit, 10)), range(16, 18))
-joint_histogram(strategies, 10, 5000)
+# strategies = map(lambda i: (f"Hit under {i}", Strategy(lambda table: PlayerAction.Stand if min(
+#     table.current_player_betting_box().hand.card_totals()) >= i else PlayerAction.Hit, 10)), range(16, 18))
+# joint_histogram(strategies, 10, 5000)
 # TODO clean up known strategy and remaining code
