@@ -85,9 +85,6 @@ class BettingBox(NamedTuple):
             return False
         return True
 
-    # limited to 5-9 betting boxes total
-    # player cannot play more than 3 boxes (US rules)
-
 
 class Dealer(NamedTuple):
     hand: Hand
@@ -118,7 +115,6 @@ class Table(NamedTuple):
         return self.player_turn < len(self.betting_boxes)
 
 
-# TODO possible add in surrender (surrender mostly interesting for card counting)
 @unique
 class PlayerAction(Enum):
     Hit = auto()
