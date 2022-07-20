@@ -362,7 +362,7 @@ def print_simulation_result(name, simulation):
 # s = run_simulation_multi_round(play_known_strategy, 100, 1000)
 # print_simulation_result("Known Strategy", s)
 
-def joint_histogram(strategies, num_runs=20000, num_rounds=1):
+def joint_histogram(strategies, num_runs=20_000, num_rounds=100):
     for name, strategy in strategies:
         s = run_simulation_multi_round(strategy, num_rounds, num_runs)
         print_simulation_result(name, s)
