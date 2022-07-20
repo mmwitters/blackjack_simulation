@@ -1,7 +1,7 @@
 import typing
 from collections import Counter
 from math import sqrt
-from random import choice
+from random import choice, seed
 from typing import NamedTuple
 import numpy as np
 from matplotlib import pyplot as plt
@@ -11,7 +11,7 @@ from blackjack import Table, PlayerAction, BettingBox, Player, Hand, Dealer, sho
     table_payout, hit, stand, dealer_moves, double_down, split
 from cards import Deck
 
-
+seed(5)
 # Assumes that the same bet is being used for each hand
 # Assumes result is for a single hand (Split not handled)
 class SimulationResult(NamedTuple):
@@ -60,13 +60,14 @@ class SimulationResult(NamedTuple):
         max_winnings = max(self.result_counter)
         return min_winnings, max_winnings
 
-    def create_hist(self):
+    def create_hist(self, name):
         labels, values = zip(*sorted(self.result_counter.items()))
-        indexes = np.arange(len(labels))
-        width = 1
-        plt.bar(indexes, values, width)
-        plt.xticks(indexes + width * 0.5, labels)
-        plt.show()
+        plt.bar(labels, values, 10, linewidth=1, edgecolor="black", alpha=0.3, label=name)
+        plt.xlabel("Winnings")
+        plt.ylabel("Frequency")
+        # plt.xticks(indexes + width * 0.5, labels)
+        # plt.show()
+
 
 class Strategy(NamedTuple):
     get_action: typing.Callable[[Table], PlayerAction]
@@ -260,7 +261,7 @@ def print_simulation_result(name, simulation):
     print(f"95% Confidence Interval: {simulation.confidence_interval_winnings()}" )
     print(f"% of Games Profitable (winnings >= 0): {simulation.percentage_games_profitable()}")
     print(f"Range of Winnings: {simulation.range()}")
-    print(f"Showing Histogram {simulation.create_hist()}")
+    # print(f"Showing Histogram {simulation.create_hist()}")
     print("")
 
 
@@ -277,12 +278,26 @@ def print_simulation_result(name, simulation):
 # print_simulation_result("Always stay", s)
 # s = run_simulation_multi_round(always_split_when_possible, 100, 2000)
 # print_simulation_result("Split when possible", s)
+#
+# s = run_simulation_multi_round(play_known_strategy, 100, 1000)
+# print_simulation_result("Known Strategy", s)
 
-s = run_simulation_multi_round(play_known_strategy, 100, 1000)
-print_simulation_result("Known Strategy", s)
+def joint_histogram(strategies, num_runs=1000, num_rounds=10):
+    for name, strategy in strategies:
+        s = run_simulation_multi_round(strategy, num_rounds, num_runs)
+        print_simulation_result(name, s)
+        s.create_hist(name)
+    plt.legend()
+    plt.title(f"Profit/Loss for {num_rounds} Rounds Simulated {num_runs} Times")
+    plt.show()
 
-# TODO if dealer runs out of cards, re-shuffle
-# TODO fix histogram output
-# TODO set seed for replications
+strategies = [("Known Strategy", play_known_strategy),
+              ("Always Stay", always_stay_strategy),
+              ("Always Double Down", always_double_down)]
+
+joint_histogram(strategies, 5, 1)
+# TODO finish individual histogram function
+#def individual_histogram()
+
 # TODO clean up known strategy and remaining code
 
