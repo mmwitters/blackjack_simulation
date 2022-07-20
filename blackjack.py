@@ -51,7 +51,7 @@ class Hand:
         return False
 
     def is_soft(self):
-        return any(card.rank == Rank.ACE for card in self.cards)
+        return len(list(filter(lambda t: t <= 21, self.card_totals()))) > 1
 
     @classmethod
     def emptyHand(cls):

@@ -8,10 +8,12 @@ from matplotlib import pyplot as plt
 
 from progressbar import progressbar
 from blackjack import Table, PlayerAction, BettingBox, Player, Hand, Dealer, shoe, initial_draw, \
-    table_payout, hit, stand, dealer_moves, double_down, split
-from cards import Deck
+    table_payout, hit, stand, dealer_moves, double_down, split, card_value
+from cards import Deck, Card, Rank, Suit
 
 seed(5)
+
+
 # Assumes that the same bet is being used for each hand
 # Assumes result is for a single hand (Split not handled)
 class SimulationResult(NamedTuple):
@@ -41,8 +43,8 @@ class SimulationResult(NamedTuple):
     def confidence_interval_winnings(self) -> tuple:
         expected_winnings = self.expected_winnings()
         sample_std_dev = self.sample_std_deviation()
-        lower_bound = expected_winnings - 1.96*sample_std_dev/sqrt(self.total_games())
-        upper_bound = expected_winnings + 1.96*sample_std_dev/sqrt(self.total_games())
+        lower_bound = expected_winnings - 1.96 * sample_std_dev / sqrt(self.total_games())
+        upper_bound = expected_winnings + 1.96 * sample_std_dev / sqrt(self.total_games())
         return lower_bound, upper_bound
 
     def total_winnings(self):
@@ -53,7 +55,7 @@ class SimulationResult(NamedTuple):
         for winnings, occurrences in self.result_counter.items():
             if winnings >= 0:
                 count += occurrences
-        return count/self.total_games()
+        return count / self.total_games()
 
     def range(self) -> tuple:
         min_winnings = min(self.result_counter)
@@ -101,9 +103,75 @@ def split_when_possible(table):
 always_split_when_possible = Strategy(split_when_possible, 10)
 
 
+def known_strategy2(table):
+    player = table.current_player_betting_box()
+    dealer_card = max(table.dealer.hand.card_totals())
+    player_total = player.hand.largest_card_total()
+    can_double_down = player.can_double_down()
+
+    if player.can_split():
+        player_card = max(card_value(player.hand.cards[0]))
+        if player_card not in {10, 5}:
+            if player_card == 9 and dealer_card in {7, 10, 11}:
+                return PlayerAction.Stand
+            elif player_card == 4:
+                return PlayerAction.Hit
+            elif dealer_card >= 8 and player_card <= 7:
+                return PlayerAction.Hit
+            elif (dealer_card == 2 or dealer_card == 7) and player_card == 6:
+                return PlayerAction.Hit
+            elif player_card <= 3 and dealer_card <= 3:
+                return PlayerAction.Hit
+            else:
+                return PlayerAction.Split
+    if player.hand.is_soft():
+        if player_total <= 12:
+            return PlayerAction.Hit
+        if player_total >= 13:
+            if player_total <= 17:
+                if (dealer_card <= 6 and dealer_card >= 5) or (
+                        dealer_card == 4 and player_total >= 15) or dealer_card == 3 and player_total == 17:
+                    return dh(can_double_down)
+            if player_total >= 19:
+                return PlayerAction.Stand
+            elif player_total == 18 and dealer_card >= 3 and dealer_card <= 6:
+                if can_double_down:
+                    return PlayerAction.DoubleDown
+                else:
+                    return PlayerAction.Stand
+            elif player_total == 18 and dealer_card == 1:
+                return PlayerAction.Hit
+            elif player_total == 18 and dealer_card <= 8:
+                return PlayerAction.Stand
+            else:
+                return PlayerAction.Hit
+
+    if player_total >= 17:
+        return PlayerAction.Stand
+    if player_total >= 13 and dealer_card <= 6:
+        return PlayerAction.Stand
+    elif dealer_card >= 4 and dealer_card <= 6 and player_total == 12:
+        return PlayerAction.Stand
+    elif dealer_card <= 10 and player_total == 11:
+        return dh(can_double_down)
+    elif dealer_card <= 9 and player_total == 10:
+        return dh(can_double_down)
+    elif dealer_card <= 6 and dealer_card >= 3 and player_total == 9:
+        return dh(can_double_down)
+    else:
+        return PlayerAction.Hit
+
+
+def dh(can_double_down):
+    if can_double_down:
+        return PlayerAction.DoubleDown
+    else:
+        return PlayerAction.Hit
+
+
 def known_strategy(table):  # implemented when dealer stands on soft 17
     player_hand_totals = table.current_player_betting_box().hand.largest_card_total()
-    dealer_hand_totals = table.dealer.hand.card_totals().pop()
+    dealer_hand_totals = max(table.dealer.hand.card_totals())
     if table.current_player_betting_box().can_split():
         if player_hand_totals == 4 or player_hand_totals == 6:
             if dealer_hand_totals < 4 or dealer_hand_totals > 7:
@@ -117,6 +185,8 @@ def known_strategy(table):  # implemented when dealer stands on soft 17
                 return PlayerAction.DoubleDown
             else:
                 return PlayerAction.Hit
+        elif table.current_player_betting_box().hand.cards[0].rank == Rank.ACE:
+            return PlayerAction.Split
         elif player_hand_totals == 12:
             if dealer_hand_totals == 2 or dealer_hand_totals >= 7:
                 return PlayerAction.Hit
@@ -134,8 +204,6 @@ def known_strategy(table):  # implemented when dealer stands on soft 17
                 return PlayerAction.Split
             else:
                 return PlayerAction.Stand
-        elif player_hand_totals == 2:
-            return PlayerAction.Split
         elif player_hand_totals == 20:
             return PlayerAction.Stand
     elif not table.current_player_betting_box().hand.is_soft():  # if player hand is hard
@@ -184,12 +252,12 @@ def known_strategy(table):  # implemented when dealer stands on soft 17
             else:
                 return PlayerAction.DoubleDown
         elif player_hand_totals == 17:
-            if dealer_hand_totals == 2 or dealer_hand_totals >= 7 or not table.current_player_betting_box().can_double_down():
+            if dealer_hand_totals <= 2 or dealer_hand_totals >= 7 or not table.current_player_betting_box().can_double_down():
                 return PlayerAction.Hit
             else:
                 return PlayerAction.DoubleDown
         elif player_hand_totals == 18:
-            if dealer_hand_totals in [2, 7, 8] or not table.current_player_betting_box().can_double_down():
+            if dealer_hand_totals <= 8 and (dealer_hand_totals in [2, 7, 8] or not table.current_player_betting_box().can_double_down()):
                 return PlayerAction.Stand
             elif dealer_hand_totals > 2 and dealer_hand_totals <= 6:
                 return PlayerAction.DoubleDown
@@ -199,8 +267,19 @@ def known_strategy(table):  # implemented when dealer stands on soft 17
             return PlayerAction.Stand
 
 
+def check_strats(table):
+    a = known_strategy(table)
+    b = known_strategy2(table)
+    if a != b:
+        print(f"{a} != {b}")
+    return a
+
+
 play_known_strategy = Strategy(known_strategy, 10)
 
+t = Table([BettingBox(Hand([Card(Rank.SIX, Suit.HEART), Card(Rank.SIX, Suit.HEART)]), Player(""), 10)],
+          Dealer(Hand([Card(Rank.SEVEN, Suit.HEART)]), Deck([])), 0)
+check_strats(t)
 
 # INDEPENDENT GAMES
 def run_single_simulation(strategy) -> SimulationResult:
@@ -250,6 +329,7 @@ def run_simulation_multi_round(strategy, num_rounds, num_runs) -> SimulationResu
         simulation_result += SimulationResult(Counter([individual_performance.total_winnings()]))
     return simulation_result
 
+
 def print_simulation_result(name, simulation):
     print(name)
     print(simulation)
@@ -258,7 +338,7 @@ def print_simulation_result(name, simulation):
     print(f"Mean: {simulation.expected_winnings()}")
     print(f"Sample Variance: {simulation.sample_variance_winnings()}")
     print(f"Sample standard deviation: {simulation.sample_std_deviation()} ")
-    print(f"95% Confidence Interval: {simulation.confidence_interval_winnings()}" )
+    print(f"95% Confidence Interval: {simulation.confidence_interval_winnings()}")
     print(f"% of Games Profitable (winnings >= 0): {simulation.percentage_games_profitable()}")
     print(f"Range of Winnings: {simulation.range()}")
     # print(f"Showing Histogram {simulation.create_hist()}")
@@ -282,7 +362,7 @@ def print_simulation_result(name, simulation):
 # s = run_simulation_multi_round(play_known_strategy, 100, 1000)
 # print_simulation_result("Known Strategy", s)
 
-def joint_histogram(strategies, num_runs=1000, num_rounds=10):
+def joint_histogram(strategies, num_runs=20000, num_rounds=1):
     for name, strategy in strategies:
         s = run_simulation_multi_round(strategy, num_rounds, num_runs)
         print_simulation_result(name, s)
@@ -291,13 +371,13 @@ def joint_histogram(strategies, num_runs=1000, num_rounds=10):
     plt.title(f"Profit/Loss for {num_rounds} Rounds Simulated {num_runs} Times")
     plt.show()
 
-strategies = [("Known Strategy", play_known_strategy),
-              ("Always Stay", always_stay_strategy),
-              ("Always Double Down", always_double_down)]
 
-joint_histogram(strategies, 5, 1)
+strategies = [("Known Strategy", play_known_strategy)]
+# ("Always Stay", always_stay_strategy),
+# ("Always Double Down", always_double_down)]
+
+joint_histogram(strategies)
 # TODO finish individual histogram function
-#def individual_histogram()
+# def individual_histogram()
 
 # TODO clean up known strategy and remaining code
-
