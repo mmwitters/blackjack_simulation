@@ -6,6 +6,7 @@ from random import choice, seed
 from typing import NamedTuple
 
 from matplotlib import pyplot as plt
+import matplotlib as mpl
 from progressbar import progressbar
 
 from blackjack import Table, PlayerAction, BettingBox, Player, Hand, Dealer, shoe, initial_draw, \
@@ -336,7 +337,8 @@ individual_strategies = [choose_random_strategy,
                          hit_under_seventeen,
                          always_split_when_possible]
 
-plt.figure(1)
+mpl.rc("font", size=12)
+plt.figure(1, dpi=200)
 
 all_strategies = [choose_random_strategy, always_stand_strategy, hit_under_seventeen, always_double_down,
                   always_split_when_possible, play_known_strategy]
@@ -347,9 +349,9 @@ simulation_results = {strategy: run_simulation_multi_round(strategy, num_rounds,
 output_simulation_results(simulation_results)
 
 joint_histogram([(strategy, simulation_results[strategy]) for strategy in joint_strategies])
+plt.savefig("joint_histogram.png")
 
 for i, strategy in enumerate(all_strategies):
-    plt.figure(i + 2)
+    plt.figure(i + 2, dpi=200)
     individual_histogram(strategy, simulation_results[strategy])
-
-plt.show()
+    plt.savefig(f"{strategy.name}.png")
