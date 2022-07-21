@@ -319,4 +319,4 @@ def individual_histogram(name, strategy, num_rounds=100, num_runs=15_000):
 # ("Always Stand", always_stand_strategy),
 # ("Always Double Down", always_double_down)]
 
-joint_histogram(strategies)
+#joint_histogram(strategies)
