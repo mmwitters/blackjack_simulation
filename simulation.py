@@ -275,9 +275,9 @@ def print_simulation_result(name, simulation):
     print(simulation)
     # for k, v in simulation.result_counter.items():
     #     print(f"{k}, {v}")
-    print(f"Mean: {simulation.expected_winnings()}")
+    print(f"Sample Mean: {simulation.expected_winnings()}")
     print(f"Sample Variance: {simulation.sample_variance_winnings()}")
-    print(f"Sample standard deviation: {simulation.sample_std_deviation()} ")
+    print(f"Sample Standard Deviation: {simulation.sample_std_deviation()} ")
     print(f"95% Confidence Interval: {simulation.confidence_interval_winnings()}")
     print(f"% of Games Profitable (winnings >= 0): {simulation.percentage_games_profitable()}")
     print(f"Range of Winnings: {simulation.range()}")
@@ -285,7 +285,7 @@ def print_simulation_result(name, simulation):
     print("")
 
 
-def joint_histogram(strategies, num_rounds=100, num_runs=100_000):
+def joint_histogram(strategies, num_rounds=100, num_runs=15_000):
     for name, strategy in strategies:
         s = run_simulation_multi_round(strategy, num_rounds, num_runs)
         print_simulation_result(name, s)
@@ -295,7 +295,7 @@ def joint_histogram(strategies, num_rounds=100, num_runs=100_000):
     plt.show()
 
 
-def individual_histogram(name, strategy, num_rounds=100, num_runs=100_000):
+def individual_histogram(name, strategy, num_rounds=100, num_runs=15_000):
     s = run_simulation_multi_round(strategy, num_rounds, num_runs)
     mean = s.expected_winnings()
     print_simulation_result(name, s)
