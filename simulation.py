@@ -60,9 +60,9 @@ class SimulationResult(NamedTuple):
         max_winnings = max(self.result_counter)
         return min_winnings, max_winnings
 
-    def create_hist(self, name):
+    def create_hist(self, name, color):
         labels, values = zip(*sorted(self.result_counter.items()))
-        plt.bar(labels, values, 10, linewidth=1, edgecolor="black", alpha=0.4, label=name)
+        plt.bar(labels, values, 10, linewidth=1, edgecolor="black", alpha=0.4, label=name, color=color)
         plt.xlabel("Winnings")
         plt.ylabel("Frequency")
 
@@ -284,26 +284,26 @@ def print_simulation_result(name, simulation):
     # print(f"Showing Histogram {simulation.create_hist()}")
     print("")
 
+num_runs = 50
+num_rounds = 100
 
-def joint_histogram(strategies, num_rounds=100, num_runs=15_000):
-    for name, strategy in strategies:
+def joint_histogram(strategies, num_rounds=num_rounds, num_runs=num_runs):
+    for name, strategy, color in strategies:
         s = run_simulation_multi_round(strategy, num_rounds, num_runs)
         print_simulation_result(name, s)
-        s.create_hist(name)
+        s.create_hist(name, color)
     plt.legend()
     plt.title(f"Profit/Loss for {num_rounds} Rounds Simulated {num_runs} Times")
-    plt.show()
 
 
-def individual_histogram(name, strategy, num_rounds=100, num_runs=15_000):
+def individual_histogram(name, strategy, color, num_rounds=num_rounds, num_runs=num_runs):
     s = run_simulation_multi_round(strategy, num_rounds, num_runs)
     mean = s.expected_winnings()
     print_simulation_result(name, s)
-    s.create_hist(name)
+    s.create_hist(name, color)
     plt.axvline(mean, linewidth=2, linestyle="--", color="black")
     plt.legend()
     plt.title(f"Profit/Loss for {num_rounds} Rounds Simulated {num_runs} Times")
-    plt.show()
 
 
 # TODO figure out how to generate plots iteratively (no pausing/uncommenting required)
@@ -313,10 +313,20 @@ def individual_histogram(name, strategy, num_rounds=100, num_runs=15_000):
 # individual_histogram("Always Double Down", always_double_down)
 # individual_histogram("Split When Possible", always_split_when_possible)
 # individual_histogram("Known Strategy", play_known_strategy)
-#
-#
-# strategies = [("Known Strategy", play_known_strategy),
-# ("Always Stand", always_stand_strategy),
-# ("Always Double Down", always_double_down)]
 
-#joint_histogram(strategies)
+joint_strategies = [("Known Strategy", play_known_strategy, "blue"),
+                    ("Always Stand", always_stand_strategy, "orange"),
+                    ("Always Double Down", always_double_down, "green")]
+individual_strategies = [("Random Action", choose_random_strategy, "red"),
+                         ("Hit Under 17", hit_under_seventeen, "purple"),
+                         ("Split When Possible", always_split_when_possible, "yellow")]
+
+plt.figure(1)
+joint_histogram(joint_strategies)
+
+all_strategies = joint_strategies + individual_strategies
+for i, (name, strategy, color) in enumerate(all_strategies):
+    plt.figure(i+2)
+    individual_histogram(name, strategy, color)
+
+plt.show()
