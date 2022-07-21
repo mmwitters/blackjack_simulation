@@ -72,7 +72,7 @@ class Strategy(NamedTuple):
     bet: int
 
 
-always_stay_strategy = Strategy(lambda table: PlayerAction.Stand, 10)
+always_stand_strategy = Strategy(lambda table: PlayerAction.Stand, 10)
 always_hit_strategy = Strategy(lambda table: PlayerAction.Hit, 10)
 always_double_down = Strategy(lambda table: PlayerAction.DoubleDown, 10)
 
@@ -308,15 +308,15 @@ def individual_histogram(name, strategy, num_rounds=100, num_runs=15_000):
 
 # TODO figure out how to generate plots iteratively (no pausing/uncommenting required)
 # individual_histogram("Random Action", choose_random_strategy)
-# individual_histogram("Always Stay", always_stay_strategy)
+#individual_histogram("Always Stand", always_stand_strategy)
 # individual_histogram("Hit Under 17", hit_under_seventeen)
 # individual_histogram("Always Double Down", always_double_down)
 # individual_histogram("Split When Possible", always_split_when_possible)
 # individual_histogram("Known Strategy", play_known_strategy)
-
-
-# strategies = [("Known Strategy", play_known_strategy),
-# ("Always Stay", always_stay_strategy),
-# ("Always Double Down", always_double_down)]
 #
-# joint_histogram(strategies)
+#
+# strategies = [("Known Strategy", play_known_strategy),
+# ("Always Stand", always_stand_strategy),
+# ("Always Double Down", always_double_down)]
+
+joint_histogram(strategies)
