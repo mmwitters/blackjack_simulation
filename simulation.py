@@ -3,12 +3,13 @@ from collections import Counter
 from math import sqrt
 from random import choice, seed
 from typing import NamedTuple
-from matplotlib import pyplot as plt
 
+from matplotlib import pyplot as plt
 from progressbar import progressbar
+
 from blackjack import Table, PlayerAction, BettingBox, Player, Hand, Dealer, shoe, initial_draw, \
-    table_payout, hit, stand, dealer_moves, double_down, split, card_value
-from cards import Deck, Card, Rank, Suit
+    table_payout, hit, stand, dealer_moves, double_down, split
+from cards import Deck, Rank
 
 seed(5)
 
@@ -70,11 +71,13 @@ class SimulationResult(NamedTuple):
 class Strategy(NamedTuple):
     get_action: typing.Callable[[Table], PlayerAction]
     bet: int
+    name: str
+    color: str
 
 
-always_stand_strategy = Strategy(lambda table: PlayerAction.Stand, 10)
-always_hit_strategy = Strategy(lambda table: PlayerAction.Hit, 10)
-always_double_down = Strategy(lambda table: PlayerAction.DoubleDown, 10)
+always_stand_strategy = Strategy(lambda table: PlayerAction.Stand, 10, "Always Stand", "orange")
+always_hit_strategy = Strategy(lambda table: PlayerAction.Hit, 10, "Always Hit", "pink")
+always_double_down = Strategy(lambda table: PlayerAction.DoubleDown, 10, "Always Double Down", "green")
 
 
 def hit_under_seventeen_fn(table):
@@ -84,7 +87,7 @@ def hit_under_seventeen_fn(table):
         return PlayerAction.Stand
 
 
-hit_under_seventeen = Strategy(hit_under_seventeen_fn, 10)
+hit_under_seventeen = Strategy(hit_under_seventeen_fn, 10, "Hit Under 17", "purple")
 
 
 def random_strategy_fn(table):
@@ -96,7 +99,7 @@ def random_strategy_fn(table):
     return choice(choices)
 
 
-choose_random_strategy = Strategy(random_strategy_fn, 10)
+choose_random_strategy = Strategy(random_strategy_fn, 10, "Random Action", "red")
 
 
 def double_down_on_eleven_fn(table):
@@ -107,7 +110,7 @@ def double_down_on_eleven_fn(table):
         return PlayerAction.Stand
 
 
-double_down_on_eleven = Strategy(double_down_on_eleven_fn, 10)
+double_down_on_eleven = Strategy(double_down_on_eleven_fn, 10, "Double Down on 11", "aqua")
 
 
 def split_when_possible(table):
@@ -117,7 +120,7 @@ def split_when_possible(table):
     return PlayerAction.Stand
 
 
-always_split_when_possible = Strategy(split_when_possible, 10)
+always_split_when_possible = Strategy(split_when_possible, 10, "Split When Possible", "yellow")
 
 
 def known_strategy(table):  # implemented when dealer stands on soft 17
@@ -219,7 +222,7 @@ def known_strategy(table):  # implemented when dealer stands on soft 17
             return PlayerAction.Stand
 
 
-play_known_strategy = Strategy(known_strategy, 10)
+play_known_strategy = Strategy(known_strategy, 10, "Known Strategy", "blue")
 
 
 def run_single_simulation(strategy) -> SimulationResult:
@@ -270,8 +273,8 @@ def run_simulation_multi_round(strategy, num_rounds, num_runs) -> SimulationResu
     return simulation_result
 
 
-def print_simulation_result(name, simulation):
-    print(name)
+def print_simulation_result(simulation, strategy):
+    print(strategy.name)
     print(simulation)
     # for k, v in simulation.result_counter.items():
     #     print(f"{k}, {v}")
@@ -284,23 +287,25 @@ def print_simulation_result(name, simulation):
     # print(f"Showing Histogram {simulation.create_hist()}")
     print("")
 
-num_runs = 50
-num_rounds = 100
+
+num_runs = 10
+num_rounds = 20
+
 
 def joint_histogram(strategies, num_rounds=num_rounds, num_runs=num_runs):
-    for name, strategy, color in strategies:
+    for strategy in strategies:
         s = run_simulation_multi_round(strategy, num_rounds, num_runs)
-        print_simulation_result(name, s)
-        s.create_hist(name, color)
+        print_simulation_result(s, strategy)
+        s.create_hist(strategy.name, strategy.color)
     plt.legend()
     plt.title(f"Profit/Loss for {num_rounds} Rounds Simulated {num_runs} Times")
 
 
-def individual_histogram(name, strategy, color, num_rounds=num_rounds, num_runs=num_runs):
+def individual_histogram(strategy, num_rounds=num_rounds, num_runs=num_runs):
     s = run_simulation_multi_round(strategy, num_rounds, num_runs)
     mean = s.expected_winnings()
-    print_simulation_result(name, s)
-    s.create_hist(name, color)
+    print_simulation_result(s, strategy)
+    s.create_hist(strategy.name, strategy.color)
     plt.axvline(mean, linewidth=2, linestyle="--", color="black")
     plt.legend()
     plt.title(f"Profit/Loss for {num_rounds} Rounds Simulated {num_runs} Times")
@@ -308,25 +313,25 @@ def individual_histogram(name, strategy, color, num_rounds=num_rounds, num_runs=
 
 # TODO figure out how to generate plots iteratively (no pausing/uncommenting required)
 # individual_histogram("Random Action", choose_random_strategy)
-#individual_histogram("Always Stand", always_stand_strategy)
+# individual_histogram("Always Stand", always_stand_strategy)
 # individual_histogram("Hit Under 17", hit_under_seventeen)
 # individual_histogram("Always Double Down", always_double_down)
 # individual_histogram("Split When Possible", always_split_when_possible)
 # individual_histogram("Known Strategy", play_known_strategy)
 
-joint_strategies = [("Known Strategy", play_known_strategy, "blue"),
-                    ("Always Stand", always_stand_strategy, "orange"),
-                    ("Always Double Down", always_double_down, "green")]
-individual_strategies = [("Random Action", choose_random_strategy, "red"),
-                         ("Hit Under 17", hit_under_seventeen, "purple"),
-                         ("Split When Possible", always_split_when_possible, "yellow")]
+joint_strategies = [play_known_strategy,
+                    always_stand_strategy,
+                    always_double_down]
+individual_strategies = [choose_random_strategy,
+                         hit_under_seventeen,
+                         always_split_when_possible]
 
 plt.figure(1)
 joint_histogram(joint_strategies)
 
 all_strategies = joint_strategies + individual_strategies
-for i, (name, strategy, color) in enumerate(all_strategies):
-    plt.figure(i+2)
-    individual_histogram(name, strategy, color)
+for i, strategy in enumerate(all_strategies):
+    plt.figure(i + 2)
+    individual_histogram(strategy)
 
 plt.show()
