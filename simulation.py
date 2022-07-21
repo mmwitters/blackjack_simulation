@@ -1,3 +1,4 @@
+import csv
 import typing
 from collections import Counter
 from math import sqrt
@@ -288,36 +289,45 @@ def print_simulation_result(simulation, strategy):
     print("")
 
 
-num_runs = 10
-num_rounds = 20
+num_runs = 15_000
+num_rounds = 100
 
 
-def joint_histogram(strategies, num_rounds=num_rounds, num_runs=num_runs):
-    for strategy in strategies:
-        s = run_simulation_multi_round(strategy, num_rounds, num_runs)
-        print_simulation_result(s, strategy)
-        s.create_hist(strategy.name, strategy.color)
+def joint_histogram(strategies: [(Strategy, SimulationResult)], num_rounds=num_rounds, num_runs=num_runs):
+    for strategy, simulation_result in strategies:
+        simulation_result.create_hist(strategy.name, strategy.color)
     plt.legend()
     plt.title(f"Profit/Loss for {num_rounds} Rounds Simulated {num_runs} Times")
 
 
-def individual_histogram(strategy, num_rounds=num_rounds, num_runs=num_runs):
-    s = run_simulation_multi_round(strategy, num_rounds, num_runs)
-    mean = s.expected_winnings()
-    print_simulation_result(s, strategy)
-    s.create_hist(strategy.name, strategy.color)
+def individual_histogram(strategy, simulation_result, num_rounds=num_rounds, num_runs=num_runs):
+    mean = simulation_result.expected_winnings()
+    simulation_result.create_hist(strategy.name, strategy.color)
     plt.axvline(mean, linewidth=2, linestyle="--", color="black")
     plt.legend()
     plt.title(f"Profit/Loss for {num_rounds} Rounds Simulated {num_runs} Times")
 
 
-# TODO figure out how to generate plots iteratively (no pausing/uncommenting required)
-# individual_histogram("Random Action", choose_random_strategy)
-# individual_histogram("Always Stand", always_stand_strategy)
-# individual_histogram("Hit Under 17", hit_under_seventeen)
-# individual_histogram("Always Double Down", always_double_down)
-# individual_histogram("Split When Possible", always_split_when_possible)
-# individual_histogram("Known Strategy", play_known_strategy)
+def output_simulation_results(results: {Strategy: SimulationResult}):
+    with open("results.csv", "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=["Name", "Sample Mean",
+                                               "Sample Variance",
+                                               "Sample Standard Deviation",
+                                               "95% Confidence Interval",
+                                               "% of Games Profitable (winnings >=0)",
+                                               "Range of Winnings"])
+        writer.writeheader()
+        for strategy, result in results.items():
+            strategy: Strategy = strategy
+            result: SimulationResult = result
+            writer.writerow({"Name": strategy.name,
+                             "Sample Mean": result.expected_winnings(),
+                             "Sample Variance": result.sample_variance_winnings(),
+                             "Sample Standard Deviation": result.sample_std_deviation(),
+                             "95% Confidence Interval": result.confidence_interval_winnings(),
+                             "% of Games Profitable (winnings >=0)": result.percentage_games_profitable(),
+                             "Range of Winnings": result.range()})
+
 
 joint_strategies = [play_known_strategy,
                     always_stand_strategy,
@@ -327,11 +337,19 @@ individual_strategies = [choose_random_strategy,
                          always_split_when_possible]
 
 plt.figure(1)
-joint_histogram(joint_strategies)
 
-all_strategies = joint_strategies + individual_strategies
+all_strategies = [choose_random_strategy, always_stand_strategy, hit_under_seventeen, always_double_down,
+                  always_split_when_possible, play_known_strategy]
+
+simulation_results = {strategy: run_simulation_multi_round(strategy, num_rounds, num_runs) for strategy in
+                      all_strategies}
+
+output_simulation_results(simulation_results)
+
+joint_histogram([(strategy, simulation_results[strategy]) for strategy in joint_strategies])
+
 for i, strategy in enumerate(all_strategies):
     plt.figure(i + 2)
-    individual_histogram(strategy)
+    individual_histogram(strategy, simulation_results[strategy])
 
 plt.show()
