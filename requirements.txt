@@ -1,0 +1,2 @@
+matplotlib~=3.5.2
+progressbar~=4.0.0
